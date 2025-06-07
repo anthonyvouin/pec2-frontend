@@ -32,21 +32,16 @@ class _CommentsModalState extends State<CommentsModal> {
   void initState() {
     super.initState();
     _loadComments();
-    
-    // Initialise la connexion SSE via le provider
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('CommentsModal: Initialisation du service SSE pour le post ${widget.post.id}');
-      final sseProvider = Provider.of<SSEProvider>(context, listen: false);
-      
-      // S'assurer que les commentaires SSE sont reflétés dans l'UI
-      sseProvider.connectToSSE(widget.post.id);
-    });
+
+    final sseProvider = context.read<SSEProvider>();
+    // S'assurer que les commentaires SSE sont reflétés dans l'UI
+    sseProvider.connectToSSE(widget.post.id);
   }
 
   Future<void> _loadComments() async {
-    final ApiService _apiService = ApiService();
+    final ApiService apiService = ApiService();
 
-    final response = await _apiService.request(
+    final response = await apiService.request(
       method: 'get',
       endpoint: '/posts/${widget.post.id}/comments',
       withAuth: true,

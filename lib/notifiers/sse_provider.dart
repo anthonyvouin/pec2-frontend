@@ -9,15 +9,21 @@ class SSEProvider extends ChangeNotifier {
   final Map<String, bool> _connectionStatus = {};
   // Map qui stocke les commentaires par postId
   final Map<String, List<Comment>> _commentsByPostId = {};
+  // Map qui stocke le nombre de commentaires par postId
+  final Map<String, int> _commentsCountByPostId = {};
 
   // Getter pour vérifier si un post a une connexion SSE active
   bool isConnected(String postId) {
     return _connectionStatus[postId] ?? false;
   }
-  
   // Getter pour récupérer tous les commentaires d'un post
   List<Comment> getComments(String postId) {
     return _commentsByPostId[postId] ?? [];
+  }
+  
+  // Getter pour récupérer le nombre de commentaires d'un post
+  int getCommentsCount(String postId) {
+    return _commentsCountByPostId[postId] ?? 0;
   }
 
   // Initialise une connexion SSE pour un post spécifique
@@ -27,6 +33,8 @@ class SSEProvider extends ChangeNotifier {
     if (_sseServices.containsKey(postId)) {
       return;
     }
+
+    debugPrint('CommentsModal: Initialisation du service SSE pour le post $postId');
 
     // Crée un nouveau service SSE
     final sseService = SSEService(
@@ -54,7 +62,6 @@ class SSEProvider extends ChangeNotifier {
       notifyListeners();
     });
   }
-
   // Ajoute un nouveau commentaire à la liste pour un post
   void _addComment(String postId, Comment comment) {
     
@@ -70,6 +77,8 @@ class SSEProvider extends ChangeNotifier {
     
     _commentsByPostId[postId]!.add(comment);
     
+    _commentsCountByPostId[postId] = comment.commentsCount;
+    
     // Tri des commentaires par date (plus récent en dernier)
     _commentsByPostId[postId]!.sort((a, b) {
       final dateA = DateTime.parse(a.createdAt);
@@ -78,7 +87,6 @@ class SSEProvider extends ChangeNotifier {
     });
     
   }
-
   // Ajoute plusieurs commentaires à la liste pour un post
   void _addComments(String postId, List<Comment> comments) {
     
@@ -105,9 +113,11 @@ class SSEProvider extends ChangeNotifier {
         return dateA.compareTo(dateB);
       });
       
+      if (comments.isNotEmpty) {
+        _commentsCountByPostId[postId] = comments.last.commentsCount;
+      }
     }
   }
-
   // Envoie un nouveau commentaire
   Future<Comment?> sendComment(String postId, String content) async {
     try {
@@ -120,6 +130,9 @@ class SSEProvider extends ChangeNotifier {
       if (!commentExists) {
         // Ajout manuel du commentaire à notre liste locale
         _addComment(postId, comment);
+        
+        _commentsCountByPostId[postId] = comment.commentsCount;
+        
         notifyListeners();
       }
       

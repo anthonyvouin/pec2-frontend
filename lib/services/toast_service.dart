@@ -8,7 +8,7 @@ enum TypeToast {
 }
 
 class ToastService {
-  void showToast(String message, ToastificationType toastType) {
+  static void showToast(String message, ToastificationType toastType) {
     toastification.show(title: Text(message), type: toastType, autoCloseDuration: const Duration(seconds: 5));
   }
 }

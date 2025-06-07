@@ -1,8 +1,14 @@
-import 'dart:io';
+import 'dart:convert';
+import 'dart:io' show File;
+import 'package:firstflutterapp/utils/platform_utils.dart';
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:firstflutterapp/interfaces/category.dart';
 import 'package:firstflutterapp/services/api_service.dart';
 import 'package:camera/camera.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mime/mime.dart';
 
 class PostCreationService {
   final ApiService _apiService = ApiService();
@@ -46,14 +52,44 @@ class PostCreationService {
 
   // Publier un nouveau post
   Future<void> publishPost({
-    required File imageFile,
+    required String imageUrl, // Changé de File à XFile
     required String name,
     required String description,
     required List<Category> selectedCategories,
     required bool isFree,
   }) async {
     try {
-      // Extraction des IDs des catégories sélectionnées
+      var file;
+      if (PlatformUtils.isWebPlatform()) {
+        print('Web platform detected, processing image URL: $imageUrl');
+        final imageData = imageUrl.split(',')[1];
+        print('Image data length: ${imageData.length}');
+        final imageBytes = base64Decode(imageData);
+        final headerSplit = imageUrl.split(',');
+        final mime = headerSplit[0].split(':')[1].split(';')[0];
+        final ext = mime.split('/')[1];
+        final mimeType = lookupMimeType('', headerBytes: imageBytes);
+        final mediaType = mimeType != null
+                ? MediaType.parse(mimeType)
+                : MediaType('application', 'octet-stream');
+        
+        file = http.MultipartFile.fromBytes(
+          'postPicture',
+          imageBytes,
+          filename: 'profile.$ext',
+          contentType: mediaType,
+        );
+
+        print('Image URL: $imageUrl');
+        print('Image Bytes Length: ${imageBytes.length}');
+      } else {
+        String? mimeType = lookupMimeType(imageUrl);
+        file = await http.MultipartFile.fromPath(
+          'postPicture',
+          imageUrl,
+          contentType: mimeType != null ? MediaType.parse(mimeType) : null,
+        );
+      }
       List<String> categoryIds =
           selectedCategories.map((category) => category.id).toList();
       await _apiService.uploadMultipart(
@@ -64,11 +100,10 @@ class PostCreationService {
           "categoryIds": categoryIds.toString(),
           "isFree": isFree.toString(),
         },
-        file: imageFile,
+        file: file,
         method: 'Post',
         withAuth: true,
       );
-
     } catch (e) {
       throw Exception('Erreur lors de la publication: $e');
     }
@@ -84,6 +119,11 @@ class PostCreationService {
   }
 
   File convertXFileToFile(XFile xFile) {
+    if (foundation.kIsWeb) {
+      throw Exception(
+        'La conversion de XFile en File n\'est pas supportée sur le web',
+      );
+    }
     return File(xFile.path);
   }
 }

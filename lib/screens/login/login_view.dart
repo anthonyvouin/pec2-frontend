@@ -22,7 +22,6 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final ToastService toastService = ToastService();
   final ApiService _apiService = ApiService();
   final LoginService _loginService = LoginService();
   bool _isSubmitted = false;
@@ -79,7 +78,7 @@ class _LoginViewState extends State<LoginView> {
           context.go(homeRoute);
         }
       } else {
-        toastService.showToast(
+        ToastService.showToast(
           _loginService.getMessageError(response.error),
           ToastificationType.error,
         );
@@ -88,7 +87,7 @@ class _LoginViewState extends State<LoginView> {
         }
       }
     } catch (e) {
-      toastService.showToast(
+      ToastService.showToast(
         'Erreur lors de la connexion',
         ToastificationType.error,
       );

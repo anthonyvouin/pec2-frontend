@@ -3,7 +3,10 @@ import 'package:firstflutterapp/components/comments/comments_modal.dart';
 import 'package:firstflutterapp/components/comments/comment_badge.dart';
 import 'package:firstflutterapp/components/post-card/report_bottom_sheet.dart';
 import 'package:firstflutterapp/services/api_service.dart';
+import 'package:firstflutterapp/notifiers/sse_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 final ApiService _apiService = ApiService();
 
@@ -47,8 +50,10 @@ class _PostCardState extends State<PostCard> {
       return 'À l\'instant';
     }
   }
-
   void _openCommentsModal(BuildContext context) {
+    final sseProvider = Provider.of<SSEProvider>(context, listen: false);
+    sseProvider.connectToSSE(widget.post.id);
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -129,7 +134,8 @@ class _PostCardState extends State<PostCard> {
           Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
-              children: [                CircleAvatar(
+              children: [                
+                CircleAvatar(
                   backgroundImage: widget.post.user.profilePicture.isEmpty
                       ? const AssetImage('assets/images/default_avatar.png') as ImageProvider
                       : NetworkImage(widget.post.user.profilePicture),
@@ -139,11 +145,16 @@ class _PostCardState extends State<PostCard> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      widget.post.user.userName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    GestureDetector(
+                      onTap: () {
+                        context.push('/profile/${widget.post.user.userName}'); // Navigate to user profile
+                      },
+                      child: Text(
+                        widget.post.user.userName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                     Text(
@@ -238,11 +249,18 @@ class _PostCardState extends State<PostCard> {
                 Text(
                   _likesCount.toString(),
                   style: TextStyle(color: Colors.grey[700]),
-                ),
-                const SizedBox(width: 8),
-                CommentBadge(
-                  count: widget.post.commentsCount,
-                  onTap: () => _openCommentsModal(context),
+                ),                const SizedBox(width: 8),
+                Consumer<SSEProvider>(
+                  builder: (context, sseProvider, _) {
+                    final commentCount = sseProvider.getCommentsCount(widget.post.id) > 0 
+                        ? sseProvider.getCommentsCount(widget.post.id)
+                        : widget.post.commentsCount;
+                    
+                    return CommentBadge(
+                      count: commentCount,
+                      onTap: () => _openCommentsModal(context),
+                    );
+                  },
                 ),
               ],
             ),

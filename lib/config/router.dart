@@ -4,6 +4,7 @@ import 'package:firstflutterapp/screens/confirm-email/confirm_email_view.dart';
 import 'package:firstflutterapp/screens/confirm-email/resend-email-confirmation.dart';
 import 'package:firstflutterapp/screens/home/home_view.dart';
 import 'package:firstflutterapp/screens/post-creation/upload-photo.dart';
+import 'package:firstflutterapp/screens/profile/other_profil_view.dart';
 import 'package:firstflutterapp/screens/profile/profil_view.dart';
 import 'package:firstflutterapp/screens/profile/setting-preferences/setting-preferences.dart';
 import 'package:firstflutterapp/screens/profile/setting-user/setting-user.dart';
@@ -39,6 +40,7 @@ const registerInfoRoute = '/register/info';
 const confirmEmailRoute = '/confirm-email';
 const resendConfirmEmailRoute = '/confirm-email/resend';
 const profileRoute = '/profile';
+const otherProfileRoute = '/profile/:username';
 const editProfileRoute = '/profile/edit';
 const profileParams = '/profile/params';
 const profileUpdatePassword = '/profile/params/update-password';
@@ -163,6 +165,16 @@ final router = GoRouter(
               ],
             ),
           ],
+        ),
+        GoRoute(
+          path: otherProfileRoute,
+          builder: (context, state) {
+            final username = state.pathParameters['username'];
+            return OtherProfileView(username: username);
+          },
+          redirect: (context, state) {
+            return isAuthenticated(context, state);
+          },
         ),
       ],
     ),

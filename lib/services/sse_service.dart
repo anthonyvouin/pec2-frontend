@@ -37,7 +37,7 @@ class SSEService {
     final baseUrl = PlatformUtils.getApiBaseUrl();
     
     try {
-      final sseUrl = '${baseUrl}/posts/$postId/comments/sse?token=$token';
+      final sseUrl = '$baseUrl/posts/$postId/comments/sse?token=$token';
       
       _eventSource = EventSourceFactory.create(sseUrl);
       _isConnected = true;
@@ -48,7 +48,7 @@ class SSEService {
             debugPrint('SSE Connected successfully');
           } else if (event.type == 'comment') {            
             try {
-              if (event.data == null || event.data!.isEmpty) {
+              if (event.data?.isEmpty == true) {
                 return;
               }
               

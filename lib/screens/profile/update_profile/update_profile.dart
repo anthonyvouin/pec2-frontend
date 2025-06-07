@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' show File;
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firstflutterapp/components/label-and-input/label-and-input-text.dart';
 import 'package:firstflutterapp/config/constantes.dart';
 import 'package:firstflutterapp/config/router.dart';
@@ -40,7 +41,6 @@ class _UpdateProfileState extends State<UpdateProfile> {
   final UpdateProfileService _updateProfileService = UpdateProfileService();
   final CheckFormData _checkFormData = CheckFormData();
   final ApiService _apiService = ApiService();
-  final ToastService _toastService = ToastService();
   final ImagePicker _picker = ImagePicker();
   late UserNotifier userNotifier;
   DateTime? birthdayDate;
@@ -134,8 +134,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
                               final base64Image = base64Encode(fileBytes);
 
                               setState(() {
-                                avatarUrl =
-                                    "data:image/${pickedFile.extension};base64,$base64Image"; // Encodage en base64
+                                avatarUrl = "data:image/${pickedFile.extension};base64,$base64Image"; // Encodage en base64
                                 isChangeImage = true;
                               });
                             }
@@ -158,8 +157,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
               );
             },
             child: CircleAvatar(
-              radius: 40,
-              backgroundImage:
+              radius: 40,              backgroundImage:
                   avatarUrl.isNotEmpty
                       ? PlatformUtils.isWebPlatform()
                           ? NetworkImage(avatarUrl)
@@ -327,13 +325,13 @@ class _UpdateProfileState extends State<UpdateProfile> {
           String message = _updateProfileService.getErrorMessage(
             response.statusCode,
           );
-          _toastService.showToast(
+          ToastService.showToast(
             "Erreur lors de la création \n du compte \n$message",
             ToastificationType.error
           );
         }
       } catch (e) {
-        _toastService.showToast(
+        ToastService.showToast(
           "Erreur lors de la création \n du compte",
             ToastificationType.error
         );

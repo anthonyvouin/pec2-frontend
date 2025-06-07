@@ -21,7 +21,6 @@ class _ConfirmEmailPageState extends State<ConfirmEmailPage> {
   final _formKeyCode = GlobalKey<FormState>();
   final TextEditingController _codeController = TextEditingController();
   final ApiService _apiService = ApiService();
-  final ToastService _toastService = ToastService();
   bool _isSubmitted = false;
 
   @override
@@ -123,13 +122,13 @@ class _ConfirmEmailPageState extends State<ConfirmEmailPage> {
         if (!mounted) return;
         context.go(loginRoute);
       } else {
-        _toastService.showToast(
+        ToastService.showToast(
           "Une erreur s'est produite",
           ToastificationType.error,
         );
       }
     }else{
-      _toastService.showToast(
+      ToastService.showToast(
         "Données invalides",
         ToastificationType.error,
       );

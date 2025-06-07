@@ -17,7 +17,6 @@ class _ResetPasswordRequestPageState extends State<ResetPasswordRequestPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final ApiService _apiService = ApiService();
-  final ToastService _toastService = ToastService();
   bool _isSubmitted = false;
 
   @override
@@ -44,7 +43,7 @@ class _ResetPasswordRequestPageState extends State<ResetPasswordRequestPage> {
         withAuth: false,
       );
       if (response.success) {
-        _toastService.showToast(
+        ToastService.showToast(
           'Un code a été envoyé à votre adresse email si elle existe.',
           ToastificationType.success,
         );
@@ -52,13 +51,13 @@ class _ResetPasswordRequestPageState extends State<ResetPasswordRequestPage> {
           context.go(confirmResetPasswordRoute, extra: _emailController.text);
         }
       } else {
-        _toastService.showToast(
+        ToastService.showToast(
           response.error ?? 'Erreur lors de la demande',
           ToastificationType.error,
         );
       }
     } catch (e) {
-      _toastService.showToast(
+      ToastService.showToast(
         'Erreur réseau',
         ToastificationType.error,
       );

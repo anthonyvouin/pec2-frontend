@@ -4,6 +4,7 @@ class Comment {
   final String userId;
   final String content;
   final String userName;
+  final int commentsCount;
   final String createdAt;
 
   Comment({
@@ -12,6 +13,7 @@ class Comment {
     required this.userId,
     required this.content,
     required this.userName,
+    required this.commentsCount,
     required this.createdAt,
   });
 
@@ -22,6 +24,7 @@ class Comment {
       userId: json['userId'],
       content: json['content'],
       userName: json['userName'] ?? 'Utilisateur',
+      commentsCount: json['commentsCount'] ?? 0,
       createdAt: json['createdAt'],
     );
   }
@@ -33,6 +36,7 @@ class Comment {
       'userId': userId,
       'content': content,
       'userName': userName,
+      'commentsCount': commentsCount,
       'createdAt': createdAt,
     };
   }

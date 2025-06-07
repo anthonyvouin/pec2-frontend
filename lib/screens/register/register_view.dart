@@ -20,7 +20,6 @@ class _RegisterViewState extends State<RegisterView> {
   final RegisterService _registerService = RegisterService();
   final LabelAndInput _labelAndInput = LabelAndInput();
   final ApiService _apiService = ApiService();
-  final ToastService _toastService = ToastService();
 
   // Step 1 Controllers
   final _formKey1 = GlobalKey<FormState>();
@@ -285,7 +284,7 @@ class _RegisterViewState extends State<RegisterView> {
           if (!mounted) return;
           context.go(registerInfoRoute);
         } else {
-          _toastService.showToast(
+          ToastService.showToast(
             _registerService.getMessageError(response.error),
             ToastificationType.error,
           );
@@ -294,7 +293,7 @@ class _RegisterViewState extends State<RegisterView> {
           _isSubmitted = false;
         });
       } else {
-        _toastService.showToast(
+        ToastService.showToast(
           "Formulaire non valide",
           ToastificationType.error,
         );

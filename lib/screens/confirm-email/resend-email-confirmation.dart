@@ -20,7 +20,6 @@ class _ResendEmailConfirmationState extends State<ResendEmailConfirmation> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final ApiService _apiService = ApiService();
-  final ToastService _toastService = ToastService();
   bool _isSubmitted = false;
 
   @override
@@ -124,13 +123,13 @@ class _ResendEmailConfirmationState extends State<ResendEmailConfirmation> {
         if (!mounted) return;
         context.go(confirmEmailRoute);
       } else {
-        _toastService.showToast(
+        ToastService.showToast(
           "Une erreur s'est produite",
           ToastificationType.error,
         );
       }
     } else {
-      _toastService.showToast("Données invalides", ToastificationType.error);
+      ToastService.showToast("Données invalides", ToastificationType.error);
     }
     setState(() {
       _isSubmitted = false;

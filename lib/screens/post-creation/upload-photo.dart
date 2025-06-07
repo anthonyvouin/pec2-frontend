@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
@@ -19,6 +20,9 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
   bool _isCameraInitialized = false;
   int _selectedCameraIndex = 0;
   bool _isCapturing = false;
+  final ImagePicker picker = ImagePicker();
+  
+  XFile? _xFile;
   File? _image;
   final PostCreationService _postCreationService = PostCreationService();
 
@@ -74,15 +78,19 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
     try {
       await _cameraController!.initialize();
       
-      // Récupérer les limites de zoom
-      _maxAvailableZoom = await _cameraController!.getMaxZoomLevel();
-      _minAvailableZoom = await _cameraController!.getMinZoomLevel();
       
-      // Récupérer les limites d'exposition
-      _minAvailableExposureOffset = await _cameraController!.getMinExposureOffset();
-      _maxAvailableExposureOffset = await _cameraController!.getMaxExposureOffset();
+      if (kIsWeb) {
+        // Sur le web, les limites de zoom ne sont pas disponibles
+        _minAvailableZoom = 1.0;
+        _maxAvailableZoom = 1.0;
+      } else {
+        _minAvailableZoom = await _cameraController!.getMinZoomLevel();
+        _maxAvailableZoom = await _cameraController!.getMaxZoomLevel();
+        _minAvailableExposureOffset = await _cameraController!.getMinExposureOffset();
+        _maxAvailableExposureOffset = await _cameraController!.getMaxExposureOffset();
+      }
+                  
       _currentExposureOffset = 0.0;
-            
       if (!mounted) return;
       setState(() {
         _isCameraInitialized = true;
@@ -112,7 +120,10 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
 
       final XFile photo = await _cameraController!.takePicture();
       setState(() {
-        _image = _postCreationService.convertXFileToFile(photo);
+        _xFile = photo;
+        if (!kIsWeb) {
+          _image = File(photo.path);
+        }
         _isCapturing = false;
       });
     } catch (e) {
@@ -131,7 +142,10 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
         setState(() {
-          _image = _postCreationService.convertXFileToFile(image);
+          _xFile = image;
+          if (!kIsWeb) {
+            _image = File(image.path);
+          }
         });
       }
     } catch (e) {
@@ -167,11 +181,11 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
   }
 
   void _continueToNextStep() {
-    if (_image != null) {
+    if (_xFile != null) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PostDetailsView(imageFile: _image!),
+          builder: (context) => PostDetailsView(imageFile: _xFile!),
         ),
       );
     } else {
@@ -184,7 +198,7 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _image != null
+      body: _xFile != null
           ? _buildImagePreview()
           : _buildCameraView(),
     );
@@ -394,10 +408,15 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
         SizedBox(
           width: MediaQuery.of(context).size.width,
           height: MediaQuery.of(context).size.height,
-          child: Image.file(
-            _image!,
-            fit: BoxFit.cover,
-          ),
+          child: kIsWeb
+              ? Image.network(
+                  _xFile!.path,
+                  fit: BoxFit.cover,
+                )
+              : Image.file(
+                  _image!,
+                  fit: BoxFit.cover,
+                ),
         ),
         
         // Bouton "Utiliser cette image" avec style Instagram
@@ -427,6 +446,7 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
             heroTag: "backBtn",
             onPressed: () {
               setState(() {
+                _xFile = null;
                 _image = null;
               });
             },

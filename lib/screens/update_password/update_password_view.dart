@@ -67,16 +67,16 @@ class _UpdatePasswordViewState extends State<UpdatePasswordView> {
       if (response.success) {
         if (!mounted) return;
         context.go(profileRoute);
-        _toastService.showToast(
+        ToastService.showToast(
             'Nouveau mot de passe enregistré', ToastificationType.success);
       } else {
-        _toastService.showToast(
+        ToastService.showToast(
           _updatePasswordService.getMessageError(response.error),
           ToastificationType.error,
         );
       }
     } catch (e) {
-      _toastService.showToast(
+      ToastService.showToast(
         _updatePasswordService.getMessageError("Erreur lors de l'enregistrement du nouveau mot de passe"),
         ToastificationType.error,
       );

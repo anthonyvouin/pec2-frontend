@@ -20,7 +20,6 @@ class _ConfirmResetPasswordPageState extends State<ConfirmResetPasswordPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   final ApiService _apiService = ApiService();
-  final ToastService _toastService = ToastService();
   bool _isSubmitted = false;
 
   @override
@@ -63,20 +62,20 @@ class _ConfirmResetPasswordPageState extends State<ConfirmResetPasswordPage> {
         withAuth: false,
       );
       if (response.success) {
-        _toastService.showToast(
+        ToastService.showToast(
           'Mot de passe réinitialisé avec succès !',
           ToastificationType.success,
         );
         if (!mounted) return;
         context.go(loginRoute);
       } else {
-        _toastService.showToast(
+        ToastService.showToast(
           response.error ?? 'Erreur lors de la réinitialisation',
           ToastificationType.error,
         );
       }
     } catch (e) {
-      _toastService.showToast(
+      ToastService.showToast(
         'Erreur réseau',
         ToastificationType.error,
       );
