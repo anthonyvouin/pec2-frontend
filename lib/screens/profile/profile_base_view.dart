@@ -27,6 +27,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   String _avatarUrl = "";
   User? _currentUser;
   bool _isLoading = true;
+  bool _isSubscriber = false;
 
   @override
   void initState() {
@@ -38,6 +39,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     } else {
       _fetchOtherUserData();
     }
+    print(_user);
   }
 
   void _initCurrentUserProfile() {
@@ -69,7 +71,8 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
       
       if (response.statusCode == 200 && mounted) {
         setState(() {
-          _user = User.fromJson(response.data);
+          _user = User.fromJson(response.data['user']);
+          _isSubscriber = response.data['isSubscriberToSearchUser'];
           _avatarUrl = _user?.profilePicture ?? "";
           _isLoading = false;
         });
