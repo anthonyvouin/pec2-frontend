@@ -12,11 +12,8 @@ class ProfileBaseView extends StatefulWidget {
   final String? username;
   final bool isCurrentUser;
 
-  const ProfileBaseView({
-    Key? key, 
-    this.username,
-    required this.isCurrentUser,
-  }) : super(key: key);
+  const ProfileBaseView({Key? key, this.username, required this.isCurrentUser})
+    : super(key: key);
 
   @override
   _ProfileBaseViewState createState() => _ProfileBaseViewState();
@@ -29,11 +26,13 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   bool _isLoading = true;
   bool _isSubscriber = false;
 
+  final ApiService _apiService = ApiService();
+
   @override
   void initState() {
     super.initState();
     _currentUser = context.read<UserNotifier>().user;
-    
+
     if (widget.isCurrentUser) {
       _initCurrentUserProfile();
     } else {
@@ -46,7 +45,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     if (_currentUser == null) {
       context.go(loginRoute);
       return;
-    }    
+    }
     setState(() {
       _user = _currentUser;
       if (_user != null && _user!.profilePicture.trim() != "") {
@@ -61,14 +60,14 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
       debugPrint("Error: Username is null");
       return;
     }
-    
+
     try {
-      final response = await ApiService().request(
+      final response = await _apiService.request(
         method: 'GET',
         endpoint: '/users/${widget.username}',
         withAuth: true,
       );
-      
+
       if (response.statusCode == 200 && mounted) {
         setState(() {
           _user = User.fromJson(response.data['user']);
@@ -102,9 +101,10 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      body: _isLoading 
-          ? const Center(child: CircularProgressIndicator())
-          : _buildProfileContent(),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _buildProfileContent(),
     );
   }
 
@@ -138,9 +138,10 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
       children: [
         CircleAvatar(
           radius: 40,
-          backgroundImage: _avatarUrl != "" 
-              ? NetworkImage(_avatarUrl) as ImageProvider
-              : const AssetImage('assets/images/dog.webp'),
+          backgroundImage:
+              _avatarUrl != ""
+                  ? NetworkImage(_avatarUrl) as ImageProvider
+                  : const AssetImage('assets/images/dog.webp'),
           backgroundColor: const Color(0xFFE4DAFF),
         ),
         Column(
@@ -166,11 +167,11 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
         ),
         widget.isCurrentUser
             ? IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: () {
-                  context.push(profileParams);
-                },
-              )
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                context.push(profileParams);
+              },
+            )
             : const SizedBox(width: 40), // Placeholder to maintain layout
       ],
     );
@@ -232,15 +233,43 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
         ],
       );
     } else {
-      return ElevatedButton(
-        onPressed: () {
-        },
-        style: ElevatedButton.styleFrom(
-          minimumSize: const Size(double.infinity, 50),
-          backgroundColor: Theme.of(context).primaryColor,
-        ),
-        child: const Text("S'abonner"),
+      return Row(
+        children: [
+          ElevatedButton(
+            onPressed: () {},
+            child: const Text('Suive'),
+          ),
+          const SizedBox(width: 10),
+
+          if (_user?.role == "CONTENT_CREATOR")
+            ElevatedButton(
+              onPressed: () {
+                if (_isSubscriber) {
+                  // TODO: Appeler l'API pour se désabonner
+                } else {
+                  // TODO: Appeler l'API pour s'abonner
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(120, 50),
+                backgroundColor: _isSubscriber
+                    ? Colors.red
+                    : Theme.of(context).primaryColor,
+              ),
+              child: Text(_isSubscriber ? "Se désabonner" : "S'abonner"),
+            ),
+        ],
       );
+
+      // return ElevatedButton(
+      //   onPressed: () {
+      //   },
+      //   style: ElevatedButton.styleFrom(
+      //     minimumSize: const Size(double.infinity, 50),
+      //     backgroundColor: Theme.of(context).primaryColor,
+      //   ),
+      //   child: const Text("S'abonner"),
+      // );
     }
   }
 }
