@@ -11,6 +11,8 @@ import 'package:firstflutterapp/screens/profile/setting-user/setting-user.dart';
 import 'package:firstflutterapp/screens/profile/update_profile/update_profile.dart';
 import 'package:firstflutterapp/screens/register/end-register.dart';
 import 'package:firstflutterapp/screens/register/register_view.dart';
+import 'package:firstflutterapp/screens/stripe/stripe_error.dart';
+import 'package:firstflutterapp/screens/stripe/stripe_success.dart';
 import 'package:firstflutterapp/screens/sub_feed_view/sub_feed_view.dart';
 import 'package:firstflutterapp/screens/support.dart';
 import 'package:firstflutterapp/screens/update_password/update_password_view.dart';
@@ -29,7 +31,6 @@ import 'package:firstflutterapp/screens/message/message.dart';
 import 'package:firstflutterapp/admin/admin_kpi.dart';
 import 'package:firstflutterapp/screens/reset-password/request-reset-password.dart';
 import 'package:firstflutterapp/screens/reset-password/confirm-reset-password.dart';
-
 
 const homeRoute = '/';
 const loginRoute = '/login';
@@ -77,11 +78,17 @@ Future<String?> isAuthenticated(
   GoRouterState state,
 ) async {
   final session = context.read<UserNotifier>();
+  print("🔍 path: ${state.uri.path}");
 
+  final allowedUnauthenticatedPaths = ['/stripe-success', '/stripe-error'];
+  if (allowedUnauthenticatedPaths.contains(state.uri.path)) {
+    print("✅ Route autorisée sans authentification");
+    return null;
+  }
   if (await session.isAuthenticated()) {
     return null;
   }
-
+  print("❌ Redirection vers login");
   return loginRoute;
 }
 
@@ -180,6 +187,16 @@ final router = GoRouter(
     ),
 
     /// Autres routes (sans menu)
+    GoRoute(
+      path: '/stripe-success',
+      name: 'stripe-success',
+      builder: (context, state) => StripeSuccess(),
+    ),
+    GoRoute(
+      path: '/stripe-error',
+      name: 'stripe-error',
+      builder: (context, state) => StripeError(),
+    ),
     GoRoute(path: loginRoute, builder: (context, state) => LoginView()),
     GoRoute(
       path: registerRoute,
@@ -188,9 +205,16 @@ final router = GoRouter(
         GoRoute(path: 'info', builder: (context, state) => EndRegisterView()),
       ],
     ),
-    GoRoute(path: confirmEmailRoute, builder: (context, state) => ConfirmEmailPage(), routes: [
-      GoRoute(path: 'resend', builder: (context, state) => ResendEmailConfirmation()),
-    ]),
+    GoRoute(
+      path: confirmEmailRoute,
+      builder: (context, state) => ConfirmEmailPage(),
+      routes: [
+        GoRoute(
+          path: 'resend',
+          builder: (context, state) => ResendEmailConfirmation(),
+        ),
+      ],
+    ),
     GoRoute(
       path: resetPasswordRoute,
       builder: (context, state) => ResetPasswordRequestPage(),

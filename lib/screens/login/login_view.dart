@@ -114,102 +114,115 @@ class _LoginViewState extends State<LoginView> {
               child: Container(
                 width: formWidth,
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Image.asset(
-                      'assets/images/logo.png',
-                      width: 200,
-                      height: 200,
+                child: SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      "Ravis de vous revoir sur",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const Text(
-                      "OnlyFlick",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    Form(
-                      key: _formKey,
+                    child: IntrinsicHeight(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        // ✅ Centrage vertical ici
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          CustomTextField(
-                            controller: _emailController,
-                            label: 'Email',
-                            validators: [RequiredValidator(), EmailValidator()],
+                          Image.asset(
+                            'assets/images/logo.png',
+                            width: 200,
+                            height: 200,
                           ),
                           const SizedBox(height: 16),
-                          CustomTextField(
-                            controller: _passwordController,
-                            label: 'Mot de passe',
-                            obscure: true,
-                            showText: false,
-                            validators: [RequiredValidator()],
-                          ),
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () => context.push(resetPasswordRoute),
-                              child: Text(
-                                'Mot de passe perdu ?',
-                                style: TextStyle(
-                                  color: AppTheme.darkColor,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
+                          const Text(
+                            "Ravis de vous revoir sur",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              const Text(
-                                "Pas de compte ?",
-                                style: TextStyle(fontSize: 14),
-                              ),
-                              InkWell(
-                                onTap: () => context.push(registerRoute),
-                                child: Text(
-                                  "(S'inscrire)",
-                                  style: TextStyle(
-                                    color: AppTheme.darkColor,
-                                    decoration: TextDecoration.underline,
+                          const Text(
+                            "OnlyFlick",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+                          Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                CustomTextField(
+                                  controller: _emailController,
+                                  label: 'Email',
+                                  validators: [
+                                    RequiredValidator(),
+                                    EmailValidator(),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                CustomTextField(
+                                  controller: _passwordController,
+                                  label: 'Mot de passe',
+                                  obscure: true,
+                                  showText: false,
+                                  validators: [RequiredValidator()],
+                                ),
+                                const SizedBox(height: 8),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    onPressed:
+                                        () => context.push(resetPasswordRoute),
+                                    child: Text(
+                                      'Mot de passe perdu ?',
+                                      style: TextStyle(
+                                        color: AppTheme.darkColor,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          Center(
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: 48,
-                              child: LoadingButton(
-                                label: 'Se connecter',
-                                isSubmitted: _isSubmitted,
-                                onPressed: _onSubmit,
-                              ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    const Text(
+                                      "Pas de compte ?",
+                                      style: TextStyle(fontSize: 14),
+                                    ),
+                                    InkWell(
+                                      onTap: () => context.push(registerRoute),
+                                      child: Text(
+                                        "(S'inscrire)",
+                                        style: TextStyle(
+                                          color: AppTheme.darkColor,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+                                Center(
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    height: 48,
+                                    child: LoadingButton(
+                                      label: 'Se connecter',
+                                      isSubmitted: _isSubmitted,
+                                      onPressed: _onSubmit,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             );
