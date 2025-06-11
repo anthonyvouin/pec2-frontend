@@ -45,7 +45,6 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     } else {
       _fetchOtherUserData();
     }
-    print(_user);
   }
 
   void _initCurrentUserProfile() {
@@ -63,9 +62,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   }
 
   Future<void> _getStripeLink() async {
-    print("entre dans getStripeLink");
     if (_user != null) {
-      print("J'ai un user ${_user?.id}");
       final ApiResponse response = await _apiService.request(
         method: 'Post',
         endpoint: '/subscriptions/checkout/${_user?.id!}',
@@ -97,10 +94,11 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
         setState(() {
           _user = User.fromJson(response.data['user']);
           _isSubscriber = response.data['isSubscriberToSearchUser'];
-          _subcriptionCanceled = response.data['canceledSubscription'];
-          _subscriptionCanceledAt = DateTime.parse(
-            response.data['subscriberUntil'],
-          );
+          _subcriptionCanceled = response.data['canceledSubscription'] ?? false;
+          _subscriptionCanceledAt =
+              response.data['subscriberUntil'] != null
+                  ? DateTime.parse(response.data['subscriberUntil'])
+                  : null;
           _avatarUrl = _user?.profilePicture ?? "";
           _isLoading = false;
         });
@@ -132,11 +130,11 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
         ToastificationType.success,
       );
       setState(() {
-        _subcriptionCanceled = response.data['canceledSubscription'];
-        _subscriptionCanceledAt = DateTime.parse(
-          response.data['subscriberUntil'],
-        );
-        _avatarUrl = _user?.profilePicture ?? "";
+        _subcriptionCanceled = true;
+        _subscriptionCanceledAt =
+            response.data['endDate'] != null
+                ? DateTime.parse(response.data['endDate'])
+                : null;
         _isLoading = false;
       });
     } else {
@@ -324,7 +322,9 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             ),
 
           if (_subcriptionCanceled && _subscriptionCanceledAt != null)
-            Text("Abonné jusqu'au ${DateFormat('dd/MM/yyyy').format(_subscriptionCanceledAt!)}"),
+            Text(
+              "Abonné jusqu'au ${DateFormat('dd/MM/yyyy').format(_subscriptionCanceledAt!)}",
+            ),
         ],
       );
     }
