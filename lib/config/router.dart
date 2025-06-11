@@ -2,6 +2,7 @@ import 'package:firstflutterapp/admin/admin_dashboard.dart';
 import 'package:firstflutterapp/notifiers/userNotififers.dart';
 import 'package:firstflutterapp/screens/confirm-email/confirm_email_view.dart';
 import 'package:firstflutterapp/screens/confirm-email/resend-email-confirmation.dart';
+import 'package:firstflutterapp/screens/creator/creator-view.dart';
 import 'package:firstflutterapp/screens/home/home_view.dart';
 import 'package:firstflutterapp/screens/post-creation/upload-photo.dart';
 import 'package:firstflutterapp/screens/profile/other_profil_view.dart';
@@ -149,6 +150,11 @@ final router = GoRouter(
           },
           routes: [
             GoRoute(path: 'edit', builder: (context, state) => UpdateProfile()),
+            GoRoute(
+              path: 'creator',
+              name: 'profile-creator',
+              builder: (context, state) => CreatorView(),
+            ),
             GoRoute(
               path: 'params',
               name: 'profile-params',
