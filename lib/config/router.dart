@@ -4,6 +4,7 @@ import 'package:firstflutterapp/screens/confirm-email/confirm_email_view.dart';
 import 'package:firstflutterapp/screens/confirm-email/resend-email-confirmation.dart';
 import 'package:firstflutterapp/screens/home/home_view.dart';
 import 'package:firstflutterapp/screens/post-creation/upload-photo.dart';
+import 'package:firstflutterapp/screens/post_detail/post_detail_screen.dart';
 import 'package:firstflutterapp/screens/profile/other_profil_view.dart';
 import 'package:firstflutterapp/screens/profile/profil_view.dart';
 import 'package:firstflutterapp/screens/profile/setting-preferences/setting-preferences.dart';
@@ -58,6 +59,7 @@ const adminKpiDashboard = '/admin/kpi-dashboard';
 const adminCategoriesManagement = '/admin/categories-management';
 const resetPasswordRoute = '/reset-password';
 const confirmResetPasswordRoute = '/reset-password/confirm';
+const postDetailRoute = '/post/:id';
 
 Future<String?> hasAdminPermissions(
   BuildContext context,
@@ -198,6 +200,16 @@ final router = GoRouter(
     GoRoute(
       path: confirmResetPasswordRoute,
       builder: (context, state) => ConfirmResetPasswordPage(),
+    ),
+    GoRoute(
+      path: postDetailRoute,
+      builder: (context, state) {
+        final postId = state.pathParameters['id'];
+        return PostDetailScreen(postId: postId!);
+      },
+      redirect: (context, state) {
+        return isAuthenticated(context, state);
+      },
     ),
     ShellRoute(
       builder: (context, state, child) {

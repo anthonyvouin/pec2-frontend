@@ -49,7 +49,7 @@ class _CommentsModalState extends State<CommentsModal> {
 
     if (response.statusCode == 200) {
       setState(() {
-        _comments = response.data['comments'].map<Comment>((json) => Comment.fromJson(json)).toList();
+        _comments = (response.data['comments'] ?? []).map<Comment>((json) => Comment.fromJson(json)).toList();
         _isLoading= false;
       });
     } else {

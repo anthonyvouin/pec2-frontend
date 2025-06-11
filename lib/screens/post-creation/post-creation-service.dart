@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io' show File;
 import 'package:firstflutterapp/utils/platform_utils.dart';
-import 'package:flutter/foundation.dart' as foundation;
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:firstflutterapp/interfaces/category.dart';
 import 'package:firstflutterapp/services/api_service.dart';
 import 'package:camera/camera.dart';
@@ -49,7 +49,6 @@ class PostCreationService {
 
     return null;
   }
-
   // Publier un nouveau post
   Future<void> publishPost({
     required String imageUrl, // Changé de File à XFile
@@ -61,43 +60,53 @@ class PostCreationService {
     try {
       var file;
       if (PlatformUtils.isWebPlatform()) {
-        print('Web platform detected, processing image URL: $imageUrl');
-        final imageData = imageUrl.split(',')[1];
-        print('Image data length: ${imageData.length}');
-        final imageBytes = base64Decode(imageData);
-        final headerSplit = imageUrl.split(',');
-        final mime = headerSplit[0].split(':')[1].split(';')[0];
-        final ext = mime.split('/')[1];
-        final mimeType = lookupMimeType('', headerBytes: imageBytes);
-        final mediaType = mimeType != null
-                ? MediaType.parse(mimeType)
-                : MediaType('application', 'octet-stream');
-        
-        file = http.MultipartFile.fromBytes(
-          'postPicture',
-          imageBytes,
-          filename: 'profile.$ext',
-          contentType: mediaType,
-        );
+        if (imageUrl.startsWith('data:image')) {
+          // Si l'image est déjà au format base64 data URI
+          final imageData = imageUrl.split(',')[1];
+          final imageBytes = base64Decode(imageData);
+          final headerSplit = imageUrl.split(',');
+          final mime = headerSplit[0].split(':')[1].split(';')[0];
+          final ext = mime.split('/')[1];
+          final mimeType = lookupMimeType('', headerBytes: imageBytes);
+          final mediaType = mimeType != null
+                  ? MediaType.parse(mimeType)
+                  : MediaType('application', 'octet-stream');
+          
+          file = http.MultipartFile.fromBytes(
+            'postPicture',
+            imageBytes,
+            filename: 'post.$ext',
+            contentType: mediaType,
+          );
 
-        print('Image URL: $imageUrl');
-        print('Image Bytes Length: ${imageBytes.length}');
+          if (kDebugMode) {
+            print('Image URL est un data URI, longueur des bytes: ${imageBytes.length}');
+          }
+        } else {
+          // Cas où imageUrl est un path de blob URL sur le web
+          if (kDebugMode) {
+            print('Web platform detected, image URL is not base64: $imageUrl');
+          }
+          
+          throw Exception('Format d\'image invalide pour le web. Attendu: data:image/*;base64,...');
+        }
       } else {
+        // Pour les plateformes mobiles
         String? mimeType = lookupMimeType(imageUrl);
         file = await http.MultipartFile.fromPath(
           'postPicture',
           imageUrl,
           contentType: mimeType != null ? MediaType.parse(mimeType) : null,
         );
-      }
-      List<String> categoryIds =
-          selectedCategories.map((category) => category.id).toList();
+      }      
+      
+      List<String> categoryIds = selectedCategories.map((category) => category.id.toString()).toList();
       await _apiService.uploadMultipart(
         endpoint: '/posts',
         fields: {
           "name": name.trim(),
           "description": description.trim(),
-          "categoryIds": categoryIds.toString(),
+          "categories": categoryIds.toString(),
           "isFree": isFree.toString(),
         },
         file: file,
@@ -117,9 +126,8 @@ class PostCreationService {
       throw Exception('Erreur lors de l\'initialisation de la caméra: $e');
     }
   }
-
   File convertXFileToFile(XFile xFile) {
-    if (foundation.kIsWeb) {
+    if (kIsWeb) {
       throw Exception(
         'La conversion de XFile en File n\'est pas supportée sur le web',
       );

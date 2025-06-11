@@ -4,6 +4,7 @@ import 'package:firstflutterapp/components/comments/comment_badge.dart';
 import 'package:firstflutterapp/components/post-card/report_bottom_sheet.dart';
 import 'package:firstflutterapp/services/api_service.dart';
 import 'package:firstflutterapp/notifiers/sse_provider.dart';
+import 'package:firstflutterapp/utils/post_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -184,8 +185,25 @@ class _PostCardState extends State<PostCard> {
                 ),
               ],
             ),
-          ),
-          GestureDetector(
+          ),          GestureDetector(
+            onTap: () {
+              // Naviguer vers la vue en plein écran en différant la déconnexion
+              // pour éviter les problèmes de notifications pendant le build
+              Future.microtask(() {
+                if (!mounted) return;
+                
+                final postsProvider = Provider.of<SSEProvider>(context, listen: false);
+                postsProvider.disconnectAll();
+                
+                // Récupérer la liste des posts du parent (FreeFeed)
+                final posts = Provider.of<List<Post>?>(context, listen: false) ?? [widget.post];
+                PostNavigator.navigateToFullscreen(
+                  context,
+                  initialPostId: widget.post.id,
+                  allPosts: posts,
+                );
+              });
+            },
             onDoubleTap: () {
               toggleLike(widget.post.id).then((_) {
                 // We need to notify parent to update posts list
@@ -196,7 +214,8 @@ class _PostCardState extends State<PostCard> {
             },
             child: Container(
               constraints: const BoxConstraints(maxHeight: 400),
-              width: double.infinity,              child: Image(
+              width: double.infinity,
+              child: Image(
                 image: widget.post.pictureUrl.isEmpty
                     ? const AssetImage('assets/images/default_image.png') as ImageProvider
                     : NetworkImage(widget.post.pictureUrl),

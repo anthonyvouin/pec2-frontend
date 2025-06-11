@@ -1,6 +1,7 @@
-import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
+import 'package:flutter/foundation.dart' hide Category;
+import 'dart:convert';
+import 'dart:math' as math;
 import 'package:firstflutterapp/config/router.dart';
-import 'package:firstflutterapp/main.dart';
 import 'package:flutter/material.dart';
 import 'package:firstflutterapp/interfaces/category.dart';
 import 'package:firstflutterapp/screens/post-creation/post-creation-service.dart';
@@ -43,10 +44,9 @@ class _PostDetailsViewState extends State<PostDetailsView> {
       _isLoading = true;
     });
 
-    try {
-      final categories = await _postCreationService.loadCategories();
+    try {      final categories = await _postCreationService.loadCategories();
       setState(() {
-        _categories = categories.map((item) => item as Category).toList();
+        _categories = categories;
         _isLoading = false;
       });
     } catch (e) {
@@ -61,9 +61,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
         );
       }
     }
-  }
-
-  Future<void> _publishPost() async {
+  }  Future<void> _publishPost() async {
     // Validation des données du post
     final error = _postCreationService.validatePostData(
       selectedCategories: _selectedCategories,
@@ -83,8 +81,47 @@ class _PostDetailsViewState extends State<PostDetailsView> {
     });
 
     try {
+      // Pour le web, on doit traiter l'image différemment
+      String imageData;
+      if (kIsWeb) {
+        // Lire les bytes de l'image et les convertir en base64
+        final bytes = await widget.imageFile.readAsBytes();
+        final base64Image = base64Encode(bytes);
+        
+        // Déterminer le type MIME en fonction de l'extension du fichier
+        final fileName = widget.imageFile.name.toLowerCase();
+        String mimeType = 'image/jpeg'; // par défaut
+        
+        if (fileName.endsWith('.png')) {
+          mimeType = 'image/png';
+        } else if (fileName.endsWith('.gif')) {
+          mimeType = 'image/gif';
+        } else if (fileName.endsWith('.webp')) {
+          mimeType = 'image/webp';
+        }
+        
+        // Créer une chaîne d'image data URI
+        imageData = 'data:$mimeType;base64,$base64Image';
+        
+        if (kDebugMode) {          
+          print('Web: Création d\'une image en base64');
+          print('Nom du fichier: ${widget.imageFile.name}');
+          print('Type MIME détecté: $mimeType');
+          print('Taille des bytes: ${bytes.length}');
+          print('Taille de la chaîne base64: ${base64Image.length}');
+          print('Début du data URI: ${imageData.substring(0, math.min(50, imageData.length))}...');
+        }
+      } else {
+        // Pour les plateformes mobiles, utiliser simplement le chemin
+        imageData = widget.imageFile.path;
+        if (kDebugMode) {
+          print('Mobile: Utilisation du chemin de fichier');
+          print('Chemin: $imageData');
+        }
+      }
+
       await _postCreationService.publishPost(
-        imageUrl: widget.imageFile.path,
+        imageUrl: imageData,
         name: _nameController.text,
         description: _descriptionController.text,
         selectedCategories: _selectedCategories,
@@ -144,14 +181,24 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                           decoration: BoxDecoration(
                             color: Colors.black,
                             borderRadius: BorderRadius.circular(8),
-                          ),
+                          ),                          
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: kIsWeb
-                                ? Image.network(
-                                    widget.imageFile.path,
-                                    fit: BoxFit.contain,
-                                    width: double.infinity,
+                                ? FutureBuilder<Uint8List>(
+                                    future: widget.imageFile.readAsBytes(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasData) {
+                                        return Image.memory(
+                                          snapshot.data!,
+                                          fit: BoxFit.contain,
+                                          width: double.infinity,
+                                        );
+                                      }
+                                      return const Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    },
                                   )
                                 : FutureBuilder<Uint8List>(
                                     future: widget.imageFile.readAsBytes(),
