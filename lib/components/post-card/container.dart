@@ -50,10 +50,10 @@ class _PostCardState extends State<PostCard> {
     } else {
       return 'À l\'instant';
     }
-  }
-  void _openCommentsModal(BuildContext context) {
+  }  void _openCommentsModal(BuildContext context) {
     final sseProvider = Provider.of<SSEProvider>(context, listen: false);
     sseProvider.connectToSSE(widget.post.id);
+    debugPrint('PostCard: Connexion SSE établie pour le post ${widget.post.id}');
     
     showModalBottomSheet(
       context: context,
@@ -73,7 +73,11 @@ class _PostCardState extends State<PostCard> {
           },
         );
       },
-    );
+    ).then((_) {
+      // Déconnexion du SSE quand la modal est fermée
+      sseProvider.disconnect(widget.post.id);
+      debugPrint('PostCard: Arrêt de l\'écoute SSE pour le post ${widget.post.id}');
+    });
   }
   
   Future<void> toggleLike(String postId) async {

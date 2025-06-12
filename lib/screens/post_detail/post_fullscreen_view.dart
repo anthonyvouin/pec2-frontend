@@ -20,11 +20,9 @@ class PostFullscreenView extends StatefulWidget {
   State<PostFullscreenView> createState() => _PostFullscreenViewState();
 }
 
-class _PostFullscreenViewState extends State<PostFullscreenView> {
-  late PageController _pageController;
+class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageController _pageController;
   List<Post> _posts = [];
   int _currentIndex = 0;
-  bool _isLoading = false;
   // Variable pour stocker une référence au Provider
   late SSEProvider _sseProvider;
   
@@ -43,42 +41,52 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
     _pageController = PageController(initialPage: _currentIndex);
     
   }
-  
-  @override
+    @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Stocker une référence au Provider que nous pourrons utiliser en toute sécurité dans dispose()
     _sseProvider = Provider.of<SSEProvider>(context, listen: false);
     
-    // Maintenant qu'on a initialisé _sseProvider, on peut connecter au SSE
-    if (_posts.isNotEmpty) {
-      _connectToSSE(_posts[_currentIndex].id);
-    }
-  }
-
-  @override
+    // On va utiliser un Future.microtask pour éviter de faire des modifications d'état pendant le build
+    Future.microtask(() {
+      // Vérification de sécurité pour s'assurer que le widget est toujours monté
+      if (mounted && _posts.isNotEmpty) {
+        _connectToSSE(_posts[_currentIndex].id);
+      }
+    });
+  }  @override
   void dispose() {
     // Utiliser la référence stockée au lieu d'accéder au contexte dans dispose
-    _sseProvider.disconnectAll();
+    // Utiliser disconnectAllSilently pour éviter les problèmes avec notifyListeners pendant dispose
+    _sseProvider.disconnectAllSilently();
     
     _pageController.dispose();
     super.dispose();
-  }  void _connectToSSE(String postId) {
+  }
+  
+  void _connectToSSE(String postId) {
     if (!mounted) return;
     
     try {
+      // Stocker l'ID du post actuel pour vérifier si on est toujours sur le même post après le délai
+      final currentPostId = postId;
+      
       // Utiliser la référence stockée au lieu d'accéder au Provider chaque fois
       
       // Déconnecter d'abord toutes les anciennes connexions
-      _sseProvider.disconnectAll();
-      
-      // Attendre un court instant avant de se reconnecter
-      Future.delayed(const Duration(milliseconds: 50), () {
-        if (mounted) {
-          // Connecter uniquement pour le post sélectionné
-          debugPrint('Setting up SSE connection for selected post: $postId');
-          _sseProvider.connectToSSE(postId);
-        }
+      // Utiliser un Future.microtask pour s'assurer que cela ne se produit pas pendant le build
+      Future.microtask(() {
+        _sseProvider.disconnectAll();
+        
+        // Attendre un court instant avant de se reconnecter
+        Future.delayed(const Duration(milliseconds: 100), () {
+          // Vérifier si le widget est toujours monté et si on est toujours sur le même post
+          if (mounted && _posts.isNotEmpty && _currentIndex < _posts.length && _posts[_currentIndex].id == currentPostId) {
+            // Connecter uniquement pour le post sélectionné
+            debugPrint('Setting up SSE connection for selected post: $currentPostId');
+            _sseProvider.connectToSSE(currentPostId);
+          }
+        });
       });
     } catch (e) {
       debugPrint('Erreur lors de la connexion SSE: $e');
@@ -161,45 +169,51 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
       appBar: AppBar(
         backgroundColor: Colors.transparent, // Appbar transparente
         elevation: 0, // Sans ombre
-        title: const Text('Publications', style: TextStyle(color: Colors.white)),
-        leading: IconButton(
+        title: const Text('Publications', style: TextStyle(color: Colors.white)),        leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            // Déconnexion silencieuse avant de naviguer
+            _sseProvider.disconnectAllSilently();
+            Navigator.pop(context);
+          },
+        ),
+      ),      body: NotificationListener<ScrollNotification>(
+        // Intercepte les notifications de défilement pour améliorer l'expérience
+        onNotification: (ScrollNotification notification) {
+          // Permet de manipuler les événements de défilement si nécessaire
+          return false; // Retourne false pour laisser la notification se propager
+        },        child: PageView.builder(
+          controller: _pageController,
+          scrollDirection: Axis.vertical,
+          physics: const ClampingScrollPhysics(), // Utiliser ClampingScrollPhysics pour un défilement plus naturel
+          itemCount: _posts.length,
+          onPageChanged: (index) {
+            // Mettre à jour l'index courant
+            setState(() {
+              _currentIndex = index;
+            });
+            
+            // Utiliser Future.microtask pour éviter de notifier pendant le build
+            Future.microtask(() {
+              if (mounted) {
+                _connectToSSE(_posts[index].id);
+              }
+            });
+          },
+          itemBuilder: (context, index) {
+            final post = _posts[index];
+            return _buildFullscreenPost(post);
+          },
         ),
       ),
-      body: PageView.builder(
-        controller: _pageController,
-        scrollDirection: Axis.vertical,
-        itemCount: _posts.length,
-        onPageChanged: (index) {
-          // Mettre à jour l'index courant
-          setState(() {
-            _currentIndex = index;
-          });
-          
-          // Utiliser Future.microtask pour éviter de notifier pendant le build
-          Future.microtask(() {
-            if (mounted) {
-              _connectToSSE(_posts[index].id);
-            }
-          });
-        },
-        itemBuilder: (context, index) {
-          final post = _posts[index];
-          return _buildFullscreenPost(post);
-        },
-      ),
     );
-  }
-  Widget _buildFullscreenPost(Post post) {
+  }  Widget _buildFullscreenPost(Post post) {
     return Stack(
       fit: StackFit.expand,
-      children: [
-        // Image du post - maintenant avec fit: BoxFit.cover pour prendre tout l'écran
+      children: [        // Image du post - maintenant avec fit: BoxFit.cover pour prendre tout l'écran
         InteractiveViewer(
           minScale: 0.5,
-          maxScale: 4.0,
-          child: Image.network(
+          maxScale: 4.0,          child: Image.network(
             post.pictureUrl,
             fit: BoxFit.cover, // Modifié de contain à cover pour prendre tout l'écran
             loadingBuilder: (context, child, loadingProgress) {
@@ -332,17 +346,23 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
-                    const SizedBox(width: 4),
-                    Consumer<SSEProvider>(
+                    const SizedBox(width: 4),                    Consumer<SSEProvider>(
                       builder: (context, sseProvider, _) {
-                        final commentCount = sseProvider.getCommentsCount(post.id) > 0
-                            ? sseProvider.getCommentsCount(post.id)
-                            : post.commentsCount;
+                        // Obtenir le nombre de commentaires avec une gestion plus défensive
+                        int commentCount;
+                        try {
+                          final sseCount = sseProvider.getCommentsCount(post.id);
+                          commentCount = sseCount > 0 ? sseCount : post.commentsCount;
+                        } catch (e) {
+                          // En cas d'erreur, revenir au nombre de commentaires du post
+                          commentCount = post.commentsCount;
+                        }
                         return Text(
                           commentCount.toString(),
                           style: const TextStyle(color: Colors.white),
                         );
-                      },                    ),
+                      },
+                    ),
                     // Suppression du coeur en bas à droite (bouton de sauvegarde)
                   ],
                 ),

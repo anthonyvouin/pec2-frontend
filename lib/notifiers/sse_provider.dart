@@ -25,7 +25,6 @@ class SSEProvider extends ChangeNotifier {
   int getCommentsCount(String postId) {
     return _commentsCountByPostId[postId] ?? 0;
   }
-
   // Initialise une connexion SSE pour un post spécifique
   void connectToSSE(String postId) {
     
@@ -40,26 +39,40 @@ class SSEProvider extends ChangeNotifier {
     final sseService = SSEService(
       postId: postId,
       onNewComment: (comment) {
-        _addComment(postId, comment);
-        notifyListeners();
+        // Utiliser Future.microtask pour éviter les problèmes de setState pendant le build
+        Future.microtask(() {
+          _addComment(postId, comment);
+          notifyListeners();
+        });
       },
       onExistingComments: (comments) {
-        _addComments(postId, comments);
-        notifyListeners();
+        // Utiliser Future.microtask pour éviter les problèmes de setState pendant le build
+        Future.microtask(() {
+          _addComments(postId, comments);
+          notifyListeners();
+        });
       },
       onConnectionStatusChanged: (isConnected) {
-        _connectionStatus[postId] = isConnected;
-        notifyListeners();
+        // Utiliser Future.microtask pour éviter les problèmes de setState pendant le build
+        Future.microtask(() {
+          _connectionStatus[postId] = isConnected;
+          notifyListeners();
+        });
       },
     );
 
     // Stocke le service et tente de se connecter
     _sseServices[postId] = sseService;
-    sseService.connect().then((_) {
-    }).catchError((error) {
-      debugPrint('SSEProvider: Erreur de connexion SSE pour post $postId: $error');
-      _connectionStatus[postId] = false;
-      notifyListeners();
+    
+    // On utilise Future.microtask pour s'assurer que l'initialisation est effectuée après le build
+    Future.microtask(() {
+      sseService.connect().then((_) {
+        // Succès - traitement asynchrone
+      }).catchError((error) {
+        debugPrint('SSEProvider: Erreur de connexion SSE pour post $postId: $error');
+        _connectionStatus[postId] = false;
+        notifyListeners();
+      });
     });
   }
   // Ajoute un nouveau commentaire à la liste pour un post
@@ -142,32 +155,71 @@ class SSEProvider extends ChangeNotifier {
       debugPrint('Stack trace: $stackTrace');
       rethrow;
     }
-  }
-
-  // Déconnecte tous les services SSE
+  }  // Déconnecte tous les services SSE
   void disconnectAll() {
-    for (final service in _sseServices.values) {
-      service.disconnect();
-    }
+    // Capture les services à déconnecter avant de vider les maps
+    final servicesToDisconnect = List<SSEService>.from(_sseServices.values);
+    
+    // Vider les maps immédiatement pour éviter des manipulations supplémentaires
     _sseServices.clear();
     _connectionStatus.clear();
-    notifyListeners();
+    _commentsByPostId.clear();
+    _commentsCountByPostId.clear();
+    
+    // Effectuer la déconnexion et la notification dans un microtask
+    // pour éviter les problèmes pendant la navigation
+    Future.microtask(() {
+      for (final service in servicesToDisconnect) {
+        try {
+          service.disconnect();
+        } catch (e) {
+          debugPrint('Erreur lors de la déconnexion SSE: $e');
+        }
+      }
+      notifyListeners();
+    });
   }
-
+  // Déconnecte tous les services SSE sans notifier les listeners
+  // Utile pour éviter les erreurs pendant la disposition des widgets
+  void disconnectAllSilently() {
+    final servicesToDisconnect = List<SSEService>.from(_sseServices.values);
+    
+    _sseServices.clear();
+    _connectionStatus.clear();
+    
+    for (final service in servicesToDisconnect) {
+      service.disconnect();
+    }
+    // Pas de notifyListeners() ici pour éviter les erreurs pendant dispose()
+  }
   // Déconnecte une connexion SSE spécifique
   void disconnect(String postId) {
     final service = _sseServices[postId];
     if (service != null) {
-      service.disconnect();
+      final serviceToDisconnect = service;
       _sseServices.remove(postId);
       _connectionStatus[postId] = false;
-      notifyListeners();
+      
+      // Effectuer la déconnexion dans un microtask pour éviter les problèmes
+      Future.microtask(() {
+        serviceToDisconnect.disconnect();
+        notifyListeners();
+      });
+    }
+  }
+  // Déconnecte une connexion SSE spécifique sans notifier les listeners
+  void disconnectSilently(String postId) {
+    final service = _sseServices[postId];
+    if (service != null) {
+      _sseServices.remove(postId);
+      _connectionStatus[postId] = false;
+      service.disconnect();
     }
   }
   
   @override
   void dispose() {
-    disconnectAll();
+    disconnectAllSilently();
     super.dispose();
   }
 }

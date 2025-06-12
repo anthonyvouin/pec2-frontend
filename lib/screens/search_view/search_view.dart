@@ -162,34 +162,15 @@ class _SearchViewState extends State<SearchView> {
           print('Unexpected response data: ${response.data}');
           data = [];
         }        
-          try {
-          setState(() {
+          try {          setState(() {
             _posts = data.map((post) => Post.fromJson(post)).toList();
             _isLoading = false;
           });
           print('Posts loaded successfully: ${_posts.length} posts');
           
-          // Optimisation: Utilisation d'une connexion SSE unique pour tous les posts
+          // Nous ne connectons plus au SSE ici, mais uniquement quand la modal des commentaires est ouverte
           if (_posts.isNotEmpty && mounted) {
-            print('Initializing optimized global SSE connection');
-            final sseProvider = Provider.of<SSEProvider>(context, listen: false);
-            
-            // Limiter le nombre de posts surveillés à 10 maximum pour les performances
-            final postsToWatch = _posts.take(10).toList();
-            
-            print('Setting up SSE for ${postsToWatch.length} posts (limited to first 10)');
-            
-            // Connexion des posts avec un léger délai pour éviter de surcharger l'API
-            for (int i = 0; i < postsToWatch.length; i++) {
-              final post = postsToWatch[i];
-              
-              // Délai progressif: 50ms entre chaque connexion
-              Future.delayed(Duration(milliseconds: 50 * i), () {
-                if (mounted) {
-                  sseProvider.connectToSSE(post.id);
-                }
-              });
-            }
+            print('SSE connections will be established only when comment modals are opened');
           } else {
             print('No posts to connect to SSE or widget not mounted');
           }
@@ -301,20 +282,15 @@ class _SearchViewState extends State<SearchView> {
       searchQuery: searchQuery,
     );
   }
-    void _navigateToPostDetail(Post post) {
+  void _navigateToPostDetail(Post post) {
     print('Navigation vers le détail du post: ${post.id}');
     
-    // Établir une connexion SSE uniquement pour le post qui va être affiché en détail
-    // et déconnecter les autres pour optimiser les ressources
+    // Nous ne connectons plus au SSE ici, mais uniquement quand la modal des commentaires est ouverte
     if (mounted) {
       final sseProvider = Provider.of<SSEProvider>(context, listen: false);
       
       // Déconnecter toutes les anciennes connexions
       sseProvider.disconnectAll();
-      
-      // Connecter uniquement pour le post sélectionné
-      print('Setting up SSE connection for selected post: ${post.id}');
-      sseProvider.connectToSSE(post.id);
     }
     
     context.push('/post/${post.id}');

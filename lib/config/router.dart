@@ -4,7 +4,9 @@ import 'package:firstflutterapp/screens/confirm-email/confirm_email_view.dart';
 import 'package:firstflutterapp/screens/confirm-email/resend-email-confirmation.dart';
 import 'package:firstflutterapp/screens/home/home_view.dart';
 import 'package:firstflutterapp/screens/post-creation/upload-photo.dart';
-import 'package:firstflutterapp/screens/post_detail/post_detail_screen.dart';
+import 'package:firstflutterapp/screens/post_detail/post_fullscreen_view.dart';
+import 'package:firstflutterapp/screens/home/home-service.dart';
+import 'package:firstflutterapp/interfaces/post.dart';
 import 'package:firstflutterapp/screens/profile/other_profil_view.dart';
 import 'package:firstflutterapp/screens/profile/profil_view.dart';
 import 'package:firstflutterapp/screens/profile/setting-preferences/setting-preferences.dart';
@@ -200,12 +202,13 @@ final router = GoRouter(
     GoRoute(
       path: confirmResetPasswordRoute,
       builder: (context, state) => ConfirmResetPasswordPage(),
-    ),
-    GoRoute(
+    ),    GoRoute(
       path: postDetailRoute,
       builder: (context, state) {
         final postId = state.pathParameters['id'];
-        return PostDetailScreen(postId: postId!);
+        
+        // On crée une page intermédiaire pour isoler le chargement du post et éviter les problèmes de build
+        return _PostDetailLoaderPage(postId: postId ?? '');
       },
       redirect: (context, state) {
         return isAuthenticated(context, state);
@@ -253,3 +256,98 @@ final router = GoRouter(
   ],
   refreshListenable: UserNotifier(),
 );
+
+// Cette classe sert d'intermédiaire pour éviter les problèmes de build
+// lors du chargement des posts dans la vue détaillée
+class _PostDetailLoaderPage extends StatefulWidget {
+  final String postId;
+  
+  const _PostDetailLoaderPage({required this.postId});
+
+  @override
+  State<_PostDetailLoaderPage> createState() => _PostDetailLoaderPageState();
+}
+
+class _PostDetailLoaderPageState extends State<_PostDetailLoaderPage> {
+  late Future<List<Post>> _postsFuture;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Charger les posts dans initState pour éviter les problèmes avec le contexte
+    _postsFuture = _loadPosts();
+  }
+  
+  Future<List<Post>> _loadPosts() async {
+    final postsService = PostsListingService();
+    
+    try {      // On charge plusieurs posts à la fois pour permettre la navigation entre posts
+      final response = await postsService.loadPosts(limit: 20);
+      return response.data;
+    } catch (e) {
+      throw Exception('Erreur lors du chargement des posts: $e');
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Post>>(
+      future: _postsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          );
+        } else if (snapshot.hasError) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white, size: 60),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Erreur: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.white),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Retour'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        } else if (snapshot.hasData) {
+          // Une fois que les données sont chargées, on les passe à la vue détaillée
+          final allPosts = snapshot.data!;
+          return PostFullscreenView(
+            initialPostId: widget.postId,
+            allPosts: allPosts,
+          );
+        } else {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: const Center(
+              child: Text('Aucune donnée trouvée', style: TextStyle(color: Colors.white)),
+            ),
+          );
+        }
+      },
+    );
+  }
+}
