@@ -20,16 +20,6 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    // final userNotifier = context.watch<UserNotifier>();
-    //
-    // // WidgetsBinding.instance.addPostFrameCallback((_) {
-    // if (userNotifier.user == null) {
-    //   context.go(loginRoute);
-    // } else if (userNotifier.user!.role == 'ADMIN') {
-    //   context.go(adminRoute);
-    // }
-    // // });
-
     return Scaffold(
       body: SafeArea(
         child: ListView(
