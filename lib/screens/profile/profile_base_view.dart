@@ -241,89 +241,97 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildProfileHeader(),
-          const SizedBox(height: 8),
-          _buildBioSection(),
-          const SizedBox(height: 32),
-          _buildActionButtons(),
-          const SizedBox(height: 8),
+          const SizedBox(height: 24),
+          Center(
+            child: CircleAvatar(
+              radius: 48,
+              backgroundImage: _avatarUrl != ""
+                  ? NetworkImage(_avatarUrl) as ImageProvider
+                  : const AssetImage('assets/images/dog.webp'),
+              backgroundColor: const Color(0xFFE4DAFF),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Center(
+                child: Text(
+                  _user?.userName != null ? '@${_user!.userName}' : '@utilisateur',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (widget.isCurrentUser)
+                Positioned(
+                  right: 0,
+                  child: IconButton(
+                    icon: const Icon(Icons.settings),
+                    onPressed: () {
+                      context.push(profileParams);
+                    },
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [Icon(Icons.border_all)],
+            children: [
+              _buildCounter('Following', _followingsCount, () => _showFollowModal(context, false)),
+              _verticalDivider(),
+              _buildCounter('Follower', _followersCount, () => _showFollowModal(context, true)),
+            ],
           ),
-          const SizedBox(height: 8),
-          Divider(height: 1),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          Center(
+            child: Text(
+              _user?.bio ?? "Aucune bio disponible",
+              style: TextStyle(
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                color: Colors.grey[700],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildActionButtons(),
         ],
       ),
     );
   }
 
-  Widget _buildProfileHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        CircleAvatar(
-          radius: 40,
-          backgroundImage:
-              _avatarUrl != ""
-                  ? NetworkImage(_avatarUrl) as ImageProvider
-                  : const AssetImage('assets/images/dog.webp'),
-          backgroundColor: const Color(0xFFE4DAFF),
+  Widget _buildCounter(String label, int count, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          children: [
+            Text(
+              count.toString(),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ],
         ),
-        GestureDetector(
-          onTap: () => _showFollowModal(context, false),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _followingsCount.toString(),
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              Text("Followings", style: TextStyle(fontSize: 10)),
-            ],
-          ),
-        ),
-        const SizedBox(width: 24),
-        GestureDetector(
-          onTap: () => _showFollowModal(context, true),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _followersCount.toString(),
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              Text("Followers", style: TextStyle(fontSize: 10)),
-            ],
-          ),
-        ),
-        widget.isCurrentUser
-            ? IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                context.push(profileParams);
-              },
-            )
-            : const SizedBox(width: 40), // Placeholder to maintain layout
-      ],
+      ),
     );
   }
 
-  Widget _buildBioSection() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Text(
-        _user?.bio ?? "Aucune bio disponible",
-        style: TextStyle(
-          fontSize: 12,
-          fontStyle: FontStyle.italic,
-          color: Colors.grey[700],
-        ),
-        textAlign: TextAlign.center,
-      ),
+  Widget _verticalDivider() {
+    return Container(
+      height: 28,
+      width: 1.2,
+      color: Colors.grey[300],
     );
   }
 
