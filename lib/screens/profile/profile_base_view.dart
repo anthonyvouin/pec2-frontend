@@ -36,10 +36,25 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   DateTime? _subscriptionCanceledAt;
   int _followersCount = 0;
   int _followingsCount = 0;
-  List<User> _followers = [];
-  List<User> _followings = [];
 
   final ApiService _apiService = ApiService();
+
+  Future<void> _fetchFollowCounts() async {
+    try {
+      final response = await _apiService.request(
+        method: 'GET',
+        endpoint: '/users/id/${_user?.id ?? widget.username}/follow-counts',
+        withAuth: true,
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          _followersCount = response.data['followers'] ?? 0;
+          _followingsCount = response.data['followings'] ?? 0;
+        });
+      }
+    } catch (e) {
+    }
+  }
 
   @override
   void initState() {
@@ -51,7 +66,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     } else {
       _fetchOtherUserData();
     }
-    _fetchFollowLists();
+    _fetchFollowCounts();
   }
 
   void _initCurrentUserProfile() {
@@ -155,27 +170,6 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     });
   }
 
-  Future<void> _fetchFollowLists() async {
-    try {
-      final followersResponse = await ApiService().request(
-        method: 'GET',
-        endpoint: '/users/followers',
-        withAuth: true,
-      );
-      final followingsResponse = await ApiService().request(
-        method: 'GET',
-        endpoint: '/users/followings',
-        withAuth: true,
-      );
-      setState(() {
-        _followers = (followersResponse.data as List).map((u) => User.fromJson(u)).toList();
-        _followings = (followingsResponse.data as List).map((u) => User.fromJson(u)).toList();
-      });
-    } catch (e) {
-      // ignore erreur
-    }
-  }
-
   void _showFollowModal(BuildContext context, bool showFollowers) {
     showModalBottomSheet(
       context: context,
@@ -197,8 +191,8 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      FollowingsList(followings: _followings),
-                      FollowersList(followers: _followers),
+                      FollowingsList(userId: _user?.id ?? ""),
+                      FollowersList(userId: _user?.id ?? ""),
                     ],
                   ),
                 ),
@@ -275,7 +269,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _followings.length.toString(),
+                _followingsCount.toString(),
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               Text("Followings", style: TextStyle(fontSize: 10)),
@@ -289,7 +283,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _followers.length.toString(),
+                _followersCount.toString(),
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               Text("Followers", style: TextStyle(fontSize: 10)),
