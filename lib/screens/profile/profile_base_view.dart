@@ -384,9 +384,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             },
             icon: const Icon(Icons.mail_outline),
             label: const Text("Voir mes messages"),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 50),
-            ),
+            style: AppTheme.emptyButtonStyle,
           ),
         ],
       );
@@ -473,12 +471,14 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                               setState(() => sending = false);
                               if (resp.success) {
                                 Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Message envoyé !')),
+                                ToastService.showToast(
+                                  'Message envoyé !',
+                                  ToastificationType.success,
                                 );
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Erreur : '+(resp.error ?? 'envoi impossible'))),
+                                ToastService.showToast(
+                                  'Erreur : '+(resp.error ?? 'envoi impossible'),
+                                  ToastificationType.error,
                                 );
                               }
                             },
@@ -493,9 +493,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             },
             icon: const Icon(Icons.mail_outline),
             label: const Text('Envoyer un message'),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 50),
-            ),
+            style: AppTheme.emptyButtonStyle,
           ),
         ],
       );
