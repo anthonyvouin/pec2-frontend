@@ -176,8 +176,8 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     });
   }
 
-  void _showFollowModal(BuildContext context, bool showFollowers) {
-    showModalBottomSheet(
+  void _showFollowModal(BuildContext context, bool showFollowers) async {
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) {
@@ -208,6 +208,10 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
         );
       },
     );
+    // Rafraîchir la liste des followings, le profil et les compteurs après la fermeture de la modale
+    await _fetchFollowingsAndSync();
+    await _fetchFollowCounts();
+    await _fetchOtherUserData();
   }
 
   @override
