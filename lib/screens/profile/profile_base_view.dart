@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../notifiers/userNotififers.dart';
+import 'package:firstflutterapp/components/follow/followers_list.dart';
+import 'package:firstflutterapp/components/follow/followings_list.dart';
 
 class ProfileBaseView extends StatefulWidget {
   final String? username;
@@ -32,6 +34,8 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   String? _stripeLink;
   bool _subcriptionCanceled = false;
   DateTime? _subscriptionCanceledAt;
+  int _followersCount = 0;
+  int _followingsCount = 0;
 
   final ApiService _apiService = ApiService();
 
@@ -45,6 +49,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     } else {
       _fetchOtherUserData();
     }
+    _fetchFollowCounts();
   }
 
   void _initCurrentUserProfile() {
@@ -148,6 +153,61 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     });
   }
 
+  Future<void> _fetchFollowCounts() async {
+    try {
+      final followersResponse = await ApiService().request(
+        method: 'GET',
+        endpoint: '/users/followers',
+        withAuth: true,
+      );
+      final followingsResponse = await ApiService().request(
+        method: 'GET',
+        endpoint: '/users/followings',
+        withAuth: true,
+      );
+      setState(() {
+        _followersCount = (followersResponse.data as List).length;
+        _followingsCount = (followingsResponse.data as List).length;
+      });
+    } catch (e) {
+      // ignore erreur
+    }
+  }
+
+  void _showFollowModal(BuildContext context, bool showFollowers) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: DefaultTabController(
+            length: 2,
+            initialIndex: showFollowers ? 1 : 0,
+            child: Column(
+              children: [
+                const TabBar(
+                  tabs: [
+                    Tab(text: 'Followings'),
+                    Tab(text: 'Followers'),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      FollowingsList(),
+                      FollowersList(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -207,26 +267,32 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                   : const AssetImage('assets/images/dog.webp'),
           backgroundColor: const Color(0xFFE4DAFF),
         ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "10",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            Text("abonnements", style: TextStyle(fontSize: 10)),
-          ],
+        GestureDetector(
+          onTap: () => _showFollowModal(context, false),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _followingsCount.toString(),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text("Followings", style: TextStyle(fontSize: 10)),
+            ],
+          ),
         ),
         const SizedBox(width: 24),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "5",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            Text("abonné(e)s", style: TextStyle(fontSize: 10)),
-          ],
+        GestureDetector(
+          onTap: () => _showFollowModal(context, true),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _followersCount.toString(),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text("Followers", style: TextStyle(fontSize: 10)),
+            ],
+          ),
         ),
         widget.isCurrentUser
             ? IconButton(
