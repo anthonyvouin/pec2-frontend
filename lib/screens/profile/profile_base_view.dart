@@ -36,6 +36,8 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   DateTime? _subscriptionCanceledAt;
   int _followersCount = 0;
   int _followingsCount = 0;
+  List<User> _followers = [];
+  List<User> _followings = [];
 
   final ApiService _apiService = ApiService();
 
@@ -49,7 +51,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     } else {
       _fetchOtherUserData();
     }
-    _fetchFollowCounts();
+    _fetchFollowLists();
   }
 
   void _initCurrentUserProfile() {
@@ -153,7 +155,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     });
   }
 
-  Future<void> _fetchFollowCounts() async {
+  Future<void> _fetchFollowLists() async {
     try {
       final followersResponse = await ApiService().request(
         method: 'GET',
@@ -166,8 +168,8 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
         withAuth: true,
       );
       setState(() {
-        _followersCount = (followersResponse.data as List).length;
-        _followingsCount = (followingsResponse.data as List).length;
+        _followers = (followersResponse.data as List).map((u) => User.fromJson(u)).toList();
+        _followings = (followingsResponse.data as List).map((u) => User.fromJson(u)).toList();
       });
     } catch (e) {
       // ignore erreur
@@ -195,8 +197,8 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      FollowingsList(),
-                      FollowersList(),
+                      FollowingsList(followings: _followings),
+                      FollowersList(followers: _followers),
                     ],
                   ),
                 ),
@@ -273,7 +275,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _followingsCount.toString(),
+                _followings.length.toString(),
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               Text("Followings", style: TextStyle(fontSize: 10)),
@@ -287,7 +289,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _followersCount.toString(),
+                _followers.length.toString(),
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               Text("Followers", style: TextStyle(fontSize: 10)),
