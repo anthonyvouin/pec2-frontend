@@ -68,7 +68,6 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     } else {
       _fetchOtherUserData();
     }
-    _fetchFollowCounts();
   }
 
   void _initCurrentUserProfile() {
@@ -83,6 +82,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
       }
       _isLoading = false;
     });
+    _fetchFollowCounts();
   }
 
   Future<void> _getStripeLink() async {
@@ -131,6 +131,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
         if (!_isSubscriber) {
           await _getStripeLink();
         }
+        await _fetchFollowCounts();
       } else {
         debugPrint("Error fetching user data: ${response.statusCode}");
         setState(() => _isLoading = false);
