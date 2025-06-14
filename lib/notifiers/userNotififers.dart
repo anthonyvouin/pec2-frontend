@@ -11,6 +11,27 @@ class UserNotifier extends ChangeNotifier {
   String? token;
   final ApiService _apiService = ApiService();
 
+  // Ajout de la gestion des followings
+  List<String> _followedUserIds = [];
+  List<String> get followedUserIds => _followedUserIds;
+
+  void setFollowedUserIds(List<String> ids) {
+    _followedUserIds = ids;
+    notifyListeners();
+  }
+
+  void addFollowedUser(String id) {
+    if (!_followedUserIds.contains(id)) {
+      _followedUserIds.add(id);
+      notifyListeners();
+    }
+  }
+
+  void removeFollowedUser(String id) {
+    _followedUserIds.remove(id);
+    notifyListeners();
+  }
+
   void onAuthenticationSuccess(Map<String, dynamic> json) async {
     user = User.fromJson(json['user']);
     token = json['token'];
