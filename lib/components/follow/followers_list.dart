@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firstflutterapp/interfaces/user.dart';
+import 'package:go_router/go_router.dart';
 
 class FollowersList extends StatelessWidget {
   final List<User> followers;
@@ -22,6 +23,9 @@ class FollowersList extends StatelessWidget {
           ),
           title: Text(user.userName),
           subtitle: Text(user.bio),
+          onTap: () {
+            context.push('/profile/${user.userName}');
+          },
         );
       },
     );
