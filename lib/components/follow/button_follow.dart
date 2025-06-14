@@ -29,6 +29,16 @@ class _ButtonFollowState extends State<ButtonFollow> {
     _isFollowed = widget.isInitiallyFollowed;
   }
 
+  @override
+  void didUpdateWidget(covariant ButtonFollow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isInitiallyFollowed != widget.isInitiallyFollowed) {
+      setState(() {
+        _isFollowed = widget.isInitiallyFollowed;
+      });
+    }
+  }
+
   Future<void> _follow() async {
     setState(() => _loading = true);
     try {

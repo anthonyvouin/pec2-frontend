@@ -65,6 +65,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
 
     if (widget.isCurrentUser) {
       _initCurrentUserProfile();
+      _fetchFollowingsAndSync();
     } else {
       _fetchOtherUserData();
     }
@@ -115,6 +116,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
       );
 
       if (response.statusCode == 200 && mounted) {
+        print("isFollowed from API: "+response.data['isFollowed'].toString());
         setState(() {
           _user = User.fromJson(response.data['user']);
           _isSubscriber = response.data['isSubscriberToSearchUser'];
@@ -362,12 +364,16 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
         ],
       );
     } else {
+      final followedUserIds = context.watch<UserNotifier>().followedUserIds;
+      final isFollowed = followedUserIds.contains(_user?.id);
       return Row(
         children: [
           ButtonFollow(
+            key: ValueKey(widget.username ?? ''),
             userId: _user?.id ?? '',
-            isInitiallyFollowed: _isFollowed,
-            onFollowChanged: () {
+            isInitiallyFollowed: isFollowed,
+            onFollowChanged: () async {
+              await _fetchFollowingsAndSync();
               _fetchFollowCounts();
               _fetchOtherUserData();
             },
@@ -400,6 +406,25 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             ),
         ],
       );
+    }
+  }
+
+  Future<void> _fetchFollowingsAndSync() async {
+    try {
+      final response = await _apiService.request(
+        method: 'GET',
+        endpoint: '/users/followings',
+        withAuth: true,
+      );
+      if (response.statusCode == 200 && response.data is List) {
+        final ids = (response.data as List)
+            .map((u) => u['id']?.toString() ?? "")
+            .where((id) => id.isNotEmpty)
+            .toList();
+        context.read<UserNotifier>().setFollowedUserIds(ids);
+      }
+    } catch (e) {
+      // ignore
     }
   }
 }
