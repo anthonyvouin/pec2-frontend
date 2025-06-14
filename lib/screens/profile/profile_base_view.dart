@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../notifiers/userNotififers.dart';
 import 'package:firstflutterapp/components/follow/followers_list.dart';
 import 'package:firstflutterapp/components/follow/followings_list.dart';
+import 'package:firstflutterapp/components/follow/button_follow.dart';
 
 class ProfileBaseView extends StatefulWidget {
   final String? username;
@@ -36,6 +37,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   DateTime? _subscriptionCanceledAt;
   int _followersCount = 0;
   int _followingsCount = 0;
+  bool _isFollowed = false;
 
   final ApiService _apiService = ApiService();
 
@@ -123,6 +125,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                   : null;
           _avatarUrl = _user?.profilePicture ?? "";
           _isLoading = false;
+          _isFollowed = response.data['isFollowed'] ?? false;
         });
 
         if (!_isSubscriber) {
@@ -360,7 +363,14 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     } else {
       return Row(
         children: [
-          ElevatedButton(onPressed: () {}, child: const Text('Suive')),
+          ButtonFollow(
+            userId: _user?.id ?? '',
+            isInitiallyFollowed: _isFollowed,
+            onFollowChanged: () {
+              _fetchFollowCounts();
+              _fetchOtherUserData();
+            },
+          ),
           const SizedBox(width: 10),
 
           if (_user?.role == "CONTENT_CREATOR" && !_subcriptionCanceled)
