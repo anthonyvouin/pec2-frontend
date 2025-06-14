@@ -14,6 +14,7 @@ import '../../notifiers/userNotififers.dart';
 import 'package:firstflutterapp/components/follow/followers_list.dart';
 import 'package:firstflutterapp/components/follow/followings_list.dart';
 import 'package:firstflutterapp/components/follow/button_follow.dart';
+import 'package:firstflutterapp/screens/message/message.dart';
 
 class ProfileBaseView extends StatefulWidget {
   final String? username;
@@ -372,6 +373,20 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
               minimumSize: const Size(double.infinity, 50),
             ),
             child: const Text("Devenir créateur"),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MessagePage()),
+              );
+            },
+            icon: const Icon(Icons.mail_outline),
+            label: const Text("Voir mes messages"),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 50),
+            ),
           ),
         ],
       );
