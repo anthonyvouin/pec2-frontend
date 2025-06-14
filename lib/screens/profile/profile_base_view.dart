@@ -393,44 +393,110 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     } else {
       final followedUserIds = context.watch<UserNotifier>().followedUserIds;
       final isFollowed = followedUserIds.contains(_user?.id);
-      return Row(
+      return Column(
         children: [
-          ButtonFollow(
-            key: ValueKey(widget.username ?? ''),
-            userId: _user?.id ?? '',
-            isInitiallyFollowed: isFollowed,
-            onFollowChanged: () async {
-              await _fetchFollowingsAndSync();
-              _fetchFollowCounts();
-              _fetchOtherUserData();
-            },
-          ),
-          const SizedBox(width: 10),
-
-          if (_user?.role == "CONTENT_CREATOR" && !_subcriptionCanceled)
-            ElevatedButton(
-              onPressed: () async {
-                if (!_isSubscriber && _stripeLink != null) {
-                  final url = Uri.parse(_stripeLink!);
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                  }
-                } else {
-                  _deleteSubscription();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(120, 50),
-                backgroundColor:
-                    _isSubscriber ? Colors.red : Theme.of(context).primaryColor,
+          Row(
+            children: [
+              ButtonFollow(
+                key: ValueKey(widget.username ?? ''),
+                userId: _user?.id ?? '',
+                isInitiallyFollowed: isFollowed,
+                onFollowChanged: () async {
+                  await _fetchFollowingsAndSync();
+                  _fetchFollowCounts();
+                  _fetchOtherUserData();
+                },
               ),
-              child: Text(_isSubscriber ? "Se désabonner" : "S'abonner"),
+              const SizedBox(width: 10),
+              if (_user?.role == "CONTENT_CREATOR" && !_subcriptionCanceled)
+                ElevatedButton(
+                  onPressed: () async {
+                    if (!_isSubscriber && _stripeLink != null) {
+                      final url = Uri.parse(_stripeLink!);
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url, mode: LaunchMode.externalApplication);
+                      }
+                    } else {
+                      _deleteSubscription();
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(120, 50),
+                    backgroundColor:
+                        _isSubscriber ? Colors.red : Theme.of(context).primaryColor,
+                  ),
+                  child: Text(_isSubscriber ? "Se désabonner" : "S'abonner"),
+                ),
+              if (_subcriptionCanceled && _subscriptionCanceledAt != null)
+                Text(
+                  "Abonné jusqu'au "+DateFormat('dd/MM/yyyy').format(_subscriptionCanceledAt!),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  final TextEditingController _msgController = TextEditingController();
+                  bool sending = false;
+                  return StatefulBuilder(
+                    builder: (context, setState) {
+                      return AlertDialog(
+                        title: Text('Envoyer un message à @${_user?.userName ?? ''}'),
+                        content: TextField(
+                          controller: _msgController,
+                          decoration: const InputDecoration(hintText: 'Votre message...'),
+                          minLines: 1,
+                          maxLines: 5,
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Annuler'),
+                          ),
+                          ElevatedButton(
+                            onPressed: sending ? null : () async {
+                              if (_msgController.text.trim().isEmpty) return;
+                              setState(() => sending = true);
+                              final ApiService api = ApiService();
+                              final resp = await api.request(
+                                method: 'POST',
+                                endpoint: '/private-messages',
+                                withAuth: true,
+                                body: {
+                                  'receiverUserName': _user?.userName,
+                                  'content': _msgController.text.trim(),
+                                },
+                              );
+                              setState(() => sending = false);
+                              if (resp.success) {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Message envoyé !')),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Erreur : '+(resp.error ?? 'envoi impossible'))),
+                                );
+                              }
+                            },
+                            child: sending ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Envoyer'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              );
+            },
+            icon: const Icon(Icons.mail_outline),
+            label: const Text('Envoyer un message'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 50),
             ),
-
-          if (_subcriptionCanceled && _subscriptionCanceledAt != null)
-            Text(
-              "Abonné jusqu'au ${DateFormat('dd/MM/yyyy').format(_subscriptionCanceledAt!)}",
-            ),
+          ),
         ],
       );
     }
