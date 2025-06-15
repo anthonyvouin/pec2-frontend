@@ -151,6 +151,7 @@ class SSEService {
   }
 
   void disconnect() {
+    debugPrint('Disconnecting from SSE for post $postId');
     _subscription?.cancel();
     _eventSource?.close();
     _isConnected = false;
@@ -241,6 +242,7 @@ class WebEventSource implements EventSourceBase {
   
   @override
   void close() {
+    debugPrint('WebEventSource: Closing SSE connection');
     if (kIsWeb && _eventSource != null) {
       _eventSource!.close();
     }

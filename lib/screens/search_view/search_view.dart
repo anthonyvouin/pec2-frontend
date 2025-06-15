@@ -293,7 +293,7 @@ class _SearchViewState extends State<SearchView> {
       sseProvider.disconnectAll();
     }
     
-    context.push('/post/${post.id}');
+    context.push('/post/${post.id}', extra: _posts);
   }
 
   @override

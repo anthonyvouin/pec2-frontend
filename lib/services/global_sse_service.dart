@@ -217,6 +217,7 @@ class WebEventSource implements EventSourceBase {
   
   @override
   void close() {
+    debugPrint('WebEventSource: Fermeture de la connexion SSE');
     _eventSource?.close();
     _streamController.close();
   }
@@ -247,6 +248,7 @@ class IoEventSource implements EventSourceBase {
   
   @override
   void close() {
+    debugPrint('IoEventSource: Fermeture de la connexion SSE');
     _streamController.close();
   }
 }
