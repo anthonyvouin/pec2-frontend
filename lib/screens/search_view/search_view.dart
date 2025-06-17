@@ -336,7 +336,7 @@ class _SearchViewState extends State<SearchView> {
                 ),
               ),
 
-              const SizedBox(height: 16),              // Catégories horizontales
+              const SizedBox(height: 16),              
               SizedBox(
                 height: 90, // Augmentation de la hauteur pour éviter le débordement
                 child:
@@ -498,10 +498,10 @@ class _SearchViewState extends State<SearchView> {
 
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 1,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
+        crossAxisCount: 3,
+        childAspectRatio: 2/3,
+        crossAxisSpacing: 1,
+        mainAxisSpacing: 1,
       ),
       itemCount: _posts.length,
       itemBuilder: (context, index) {        final post = _posts[index];
@@ -510,7 +510,7 @@ class _SearchViewState extends State<SearchView> {
           child: Card(
             clipBehavior: Clip.antiAlias,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(0),
             ),
             child: Stack(
               fit: StackFit.expand,
