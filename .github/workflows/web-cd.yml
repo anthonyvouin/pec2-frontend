@@ -1,0 +1,75 @@
+name: Web Continuous Deployment
+
+on:
+  workflow_run:
+    workflows: [Docker]
+    types:
+      - completed
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GKE_CLUSTER: pec2
+  GKE_ZONE: europe-west9
+  KUBE_REPO: anthonyvouin/pec2-kube
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    name: Deploy to GKE
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Checkout Kubernetes repository
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ env.KUBE_REPO }}
+        path: kube-files
+        
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+        
+    - name: 'Setup Google Cloud CLI'
+      uses: 'google-github-actions/setup-gcloud@v2'
+      with:
+        project_id: '${{ secrets.GCP_PROJECT_ID }}'
+        install_components: 'gke-gcloud-auth-plugin'
+        
+    - name: 'Get GKE credentials'
+      run: |
+        gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --region ${{ env.GKE_ZONE }} --project ${{ env.PROJECT_ID }}
+        
+    # https://stackoverflow.com/questions/40366192/kubernetes-how-to-make-deployment-to-update-image
+    - name: Apply Kubernetes configurations
+      run: |
+        # D'abord scale down le deployment existant
+        kubectl scale deployment front-pec-2-deployment --replicas=0 || true
+        
+        # Modifier l'image du déploiement pour utiliser le SHA du commit
+        echo "Mise à jour de l'image Docker avec le SHA du commit..."
+        sed -i "s|image: charlineroyer937/frontend-pec-2:latest|image: charlineroyer937/frontend-pec-2:${{ github.sha }}|g" ./kube-files/kube/prod/front/deployment.yaml
+        
+        # Appliquer le Secret backend à partir du secret GitHub
+        echo "${{ secrets.CONFIGMAP_SECRET }}" > back-pec-2-secret-env.yaml
+        kubectl apply -f back-pec-2-secret-env.yaml
+        
+        # Appliquer le Deployment
+        echo "Application du Deployment..."
+        kubectl apply -f ./kube-files/kube/prod/front/deployment.yaml
+    
+    - name: Afficher les informations de déploiement
+      run: |
+        echo "Déploiement terminé!"
+        echo "Statut des déploiements:"
+        kubectl get deployment
+        echo "Statut des services:"
+        kubectl get service
+        echo "Statut de l'ingress:"
+        kubectl get ingress
+        echo "Statut du certificat:"
+        kubectl get managedcertificate
