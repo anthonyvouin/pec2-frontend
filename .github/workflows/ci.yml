@@ -10,46 +10,51 @@ on:
   workflow_dispatch: ~
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.29.2'
-          channel: 'stable'
-
-  dependencies:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.29.2'
-          channel: 'stable'
-      - name: Install dependencies
-        run: flutter pub get
-
   build:
-    needs: dependencies
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+      
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.2'
+          flutter-version: '3.29.3'
           channel: 'stable'
+      
       - name: Install dependencies
         run: flutter pub get
+      
       - name: Create .env file
         run: |
-          echo "API_BASE_URL=${{ secrets.API_BASE_URL }}" > .env
+          echo "API_BASE_URL_ANDROID=${{ secrets.API_BASE_URL }}" > .env
+          echo "API_BASE_URL_IOS=${{ secrets.API_BASE_URL }}" >> .env
+          echo "API_BASE_URL_WEB=${{ secrets.API_BASE_URL }}" >> .env
+          echo "API_BASE_URL_DEFAULT=${{ secrets.API_BASE_URL }}" >> .env
+      
+      - name: Flutter doctor
+        run: flutter doctor -v
+      
+      - name: Install Linux dependencies for Flutter web
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl git unzip xz-utils libglu1-mesa
+          sudo apt-get install -y clang cmake ninja-build pkg-config
+      
+      - name: Build Web
+        run: flutter build web --release
+      
+      - name: Upload web build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: build/web/
+      
       - name: Build APK
-        run: flutter build apk
+        run: flutter build apk --release
+      
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-build
+          path: build/app/outputs/flutter-apk/app-release.apk
