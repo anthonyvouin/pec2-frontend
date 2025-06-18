@@ -22,16 +22,20 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          children: [
-            Header(),
-            SizedBox(height: 24),
-            SearchBarOnlyFlic(),
-            SizedBox(height: 24),
-            CategoriesList(),
-            SizedBox(height: 32),
-            FreeFeed(currentUser: false, isFree: true),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: ListView(
+            children: [
+              SizedBox(height: 24),
+              Header(),
+              SizedBox(height: 24),
+              SearchBarOnlyFlic(),
+              SizedBox(height: 24),
+              CategoriesList(),
+              SizedBox(height: 32),
+              FreeFeed(currentUser: false, isFree: true, homeFeed: true),
+            ],
+          ),
         ),
       ),
     );

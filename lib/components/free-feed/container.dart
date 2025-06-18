@@ -9,9 +9,15 @@ class FreeFeed extends StatefulWidget {
   final bool currentUser;
   final bool isFree;
   final String? userId;
+  final bool homeFeed;
 
-  const FreeFeed({super.key, required this.currentUser, required this.isFree, this.userId});
-
+  const FreeFeed({
+    super.key,
+    required this.currentUser,
+    required this.isFree,
+    this.userId,
+    required this.homeFeed,
+  });
 
   @override
   _FreeFeedState createState() => _FreeFeedState();
@@ -32,29 +38,35 @@ class _FreeFeedState extends State<FreeFeed> {
   void didUpdateWidget(covariant FreeFeed oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.isFree != widget.isFree || oldWidget.userId != widget.userId) {
+    if (oldWidget.isFree != widget.isFree ||
+        oldWidget.userId != widget.userId) {
       _loadPosts();
     }
   }
 
   @override
   void dispose() {
-    // La déconnexion est gérée par le provider
-    // final sseProvider = Provider.of<SSEProvider>(context, listen: false);
-    // sseProvider.disconnectAll();
     super.dispose();
-  }  Future<void> _loadPosts() async {
+  }
+
+  Future<void> _loadPosts() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final paginatedResponse = await _postListingService.loadPosts(widget.isFree, widget.userId);
+      final paginatedResponse = await _postListingService.loadPosts(
+        1,
+        10,
+        widget.isFree,
+        widget.userId,
+        false,
+      );
       setState(() {
         _posts = paginatedResponse.data;
         _isLoading = false;
       });
-      
+
       // Nous ne connectons plus au SSE ici, mais uniquement quand la modal des commentaires est ouverte
     } catch (e) {
       setState(() {
@@ -76,29 +88,86 @@ class _FreeFeedState extends State<FreeFeed> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if(!widget.currentUser)
-        const Text(
-          "Pour vous",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        if (!widget.currentUser)
+          const Text(
+            "Pour vous",
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
         const SizedBox(height: 24),
-        ListView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          itemCount: _posts.length,
-          itemBuilder: (_, index) {
-            final post = _posts[index];
-            return Consumer<SSEProvider>(
-              builder: (context, sseProvider, _) {
-                final isConnected = sseProvider.isConnected(post.id);
-                return PostCard(
-                  post: post,
-                  isSSEConnected: isConnected,
-                );
-              },
-            );
-          },
+        // GridView.builder(
+        //   shrinkWrap: true,
+        //   physics: const NeverScrollableScrollPhysics(),
+        //   itemCount: _posts.length,
+        //   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        //     maxCrossAxisExtent: 600,
+        //     childAspectRatio: 2 / 3,
+        //     crossAxisSpacing: 8,
+        //     mainAxisSpacing: 8,
+        //   ),
+        //   itemBuilder: (context, index) {
+        //     final post = _posts[index];
+        //     return Consumer<SSEProvider>(
+        //       builder: (context, sseProvider, _) {
+        //         final isConnected = sseProvider.isConnected(post.id);
+        //         return ConstrainedBox(
+        //           constraints: const BoxConstraints(
+        //             maxHeight: 500, // ✅ Hauteur minimale ici
+        //           ),
+        //           child: PostCard(
+        //             post: post,
+        //             isSSEConnected: isConnected,
+        //           ),
+        //         );
+        //       },
+        //     );
+        //   },
+        // ),
+        Column(
+          children: [
+            Wrap(
+              spacing: 8, // espace horizontal entre les cartes
+              runSpacing: 8, // espace vertical entre les lignes
+              children:
+                  _posts.map((post) {
+                    return Consumer<SSEProvider>(
+                      builder: (context, sseProvider, _) {
+                        final isConnected = sseProvider.isConnected(post.id);
+                        return ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: 400,
+                            minWidth: 400,
+                            minHeight: 580,
+                            maxHeight: 580,
+                          ),
+                          child: PostCard(
+                            post: post,
+                            isSSEConnected: isConnected,
+                          ),
+                        );
+                      },
+                    );
+                  }).toList(),
+            ),
+          ],
         ),
+
+        // ListView.builder(
+        //   physics: const NeverScrollableScrollPhysics(),
+        //   shrinkWrap: true,
+        //   itemCount: _posts.length,
+        //   itemBuilder: (_, index) {
+        //     final post = _posts[index];
+        //     return Consumer<SSEProvider>(
+        //       builder: (context, sseProvider, _) {
+        //         final isConnected = sseProvider.isConnected(post.id);
+        //         return PostCard(
+        //           post: post,
+        //           isSSEConnected: isConnected,
+        //         );
+        //       },
+        //     );
+        //   },
+        // ),
       ],
     );
   }

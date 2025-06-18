@@ -9,7 +9,7 @@ import 'package:go_router/go_router.dart';
 class PostFullscreenView extends StatefulWidget {
   final String initialPostId;
   final List<Post> allPosts;
-  
+
   const PostFullscreenView({
     super.key,
     required this.initialPostId,
@@ -20,33 +20,37 @@ class PostFullscreenView extends StatefulWidget {
   State<PostFullscreenView> createState() => _PostFullscreenViewState();
 }
 
-class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageController _pageController;
+class _PostFullscreenViewState extends State<PostFullscreenView> {
+  late PageController _pageController;
   List<Post> _posts = [];
   int _currentIndex = 0;
+
   // Variable pour stocker une référence au Provider
   late SSEProvider _sseProvider;
-  
+
   @override
   void initState() {
     super.initState();
     _posts = widget.allPosts;
-    
+
     // Trouver l'index du post initial
-    _currentIndex = _posts.indexWhere((post) => post.id == widget.initialPostId);
+    _currentIndex = _posts.indexWhere(
+      (post) => post.id == widget.initialPostId,
+    );
     if (_currentIndex == -1) {
       _currentIndex = 0; // Fallback à l'index 0 si le post n'est pas trouvé
     }
-    
+
     // Initialiser le PageController à l'index du post initial
     _pageController = PageController(initialPage: _currentIndex);
-    
   }
-    @override
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Stocker une référence au Provider que nous pourrons utiliser en toute sécurité dans dispose()
     _sseProvider = Provider.of<SSEProvider>(context, listen: false);
-    
+
     // On va utiliser un Future.microtask pour éviter de faire des modifications d'état pendant le build
     Future.microtask(() {
       // Vérification de sécurité pour s'assurer que le widget est toujours monté
@@ -54,36 +58,43 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageCon
         _connectToSSE(_posts[_currentIndex].id);
       }
     });
-  }  @override
+  }
+
+  @override
   void dispose() {
     // Utiliser la référence stockée au lieu d'accéder au contexte dans dispose
     // Utiliser disconnectAllSilently pour éviter les problèmes avec notifyListeners pendant dispose
     _sseProvider.disconnectAllSilently();
-    
+
     _pageController.dispose();
     super.dispose();
   }
-  
+
   void _connectToSSE(String postId) {
     if (!mounted) return;
-    
+
     try {
       // Stocker l'ID du post actuel pour vérifier si on est toujours sur le même post après le délai
       final currentPostId = postId;
-      
+
       // Utiliser la référence stockée au lieu d'accéder au Provider chaque fois
-      
+
       // Déconnecter d'abord toutes les anciennes connexions
       // Utiliser un Future.microtask pour s'assurer que cela ne se produit pas pendant le build
       Future.microtask(() {
         _sseProvider.disconnectAll();
-        
+
         // Attendre un court instant avant de se reconnecter
         Future.delayed(const Duration(milliseconds: 100), () {
           // Vérifier si le widget est toujours monté et si on est toujours sur le même post
-          if (mounted && _posts.isNotEmpty && _currentIndex < _posts.length && _posts[_currentIndex].id == currentPostId) {
+          if (mounted &&
+              _posts.isNotEmpty &&
+              _currentIndex < _posts.length &&
+              _posts[_currentIndex].id == currentPostId) {
             // Connecter uniquement pour le post sélectionné
-            debugPrint('Setting up SSE connection for selected post: $currentPostId');
+            debugPrint(
+              'Setting up SSE connection for selected post: $currentPostId',
+            );
             _sseProvider.connectToSSE(currentPostId);
           }
         });
@@ -113,18 +124,19 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageCon
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
       }
     }
   }
+
   void _openCommentsModal(Post post) {
     if (!mounted) return;
 
     // Utiliser la référence stockée au lieu d'accéder au Provider chaque fois
     _sseProvider.connectToSSE(post.id);
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -165,11 +177,18 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageCon
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      extendBodyBehindAppBar: true, // Permet au contenu de s'étendre sous la barre d'applications
+      extendBodyBehindAppBar: true,
+      // Permet au contenu de s'étendre sous la barre d'applications
       appBar: AppBar(
-        backgroundColor: Colors.transparent, // Appbar transparente
-        elevation: 0, // Sans ombre
-        title: const Text('Publications', style: TextStyle(color: Colors.white)),        leading: IconButton(
+        backgroundColor: Colors.transparent,
+        // Appbar transparente
+        elevation: 0,
+        // Sans ombre
+        title: const Text(
+          'Publications',
+          style: TextStyle(color: Colors.white),
+        ),
+        leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             // Déconnexion silencieuse avant de naviguer
@@ -177,22 +196,25 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageCon
             Navigator.pop(context);
           },
         ),
-      ),      body: NotificationListener<ScrollNotification>(
+      ),
+      body: NotificationListener<ScrollNotification>(
         // Intercepte les notifications de défilement pour améliorer l'expérience
         onNotification: (ScrollNotification notification) {
           // Permet de manipuler les événements de défilement si nécessaire
           return false; // Retourne false pour laisser la notification se propager
-        },        child: PageView.builder(
+        },
+        child: PageView.builder(
           controller: _pageController,
           scrollDirection: Axis.vertical,
-          physics: const ClampingScrollPhysics(), // Utiliser ClampingScrollPhysics pour un défilement plus naturel
+          physics: const ClampingScrollPhysics(),
+          // Utiliser ClampingScrollPhysics pour un défilement plus naturel
           itemCount: _posts.length,
           onPageChanged: (index) {
             // Mettre à jour l'index courant
             setState(() {
               _currentIndex = index;
             });
-            
+
             // Utiliser Future.microtask pour éviter de notifier pendant le build
             Future.microtask(() {
               if (mounted) {
@@ -207,33 +229,40 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageCon
         ),
       ),
     );
-  }  Widget _buildFullscreenPost(Post post) {
+  }
+
+  Widget _buildFullscreenPost(Post post) {
     return Stack(
       fit: StackFit.expand,
-      children: [        // Image du post - maintenant avec fit: BoxFit.cover pour prendre tout l'écran
+      children: [
+        // Image du post - maintenant avec fit: BoxFit.cover pour prendre tout l'écran
         InteractiveViewer(
           minScale: 0.5,
-          maxScale: 4.0,          child: Image.network(
+          maxScale: 4.0,
+          child: Image.network(
             post.pictureUrl,
-            fit: BoxFit.cover, // Modifié de contain à cover pour prendre tout l'écran
+            fit: BoxFit.cover,
+            // Modifié de contain à cover pour prendre tout l'écran
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) return child;
               return Center(
                 child: CircularProgressIndicator(
                   color: Colors.white,
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                          (loadingProgress.expectedTotalBytes ?? 1)
-                      : null,
+                  value:
+                      loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              (loadingProgress.expectedTotalBytes ?? 1)
+                          : null,
                 ),
               );
             },
-            errorBuilder: (context, error, stackTrace) => const Center(
-              child: Icon(Icons.error, color: Colors.white, size: 50),
-            ),
+            errorBuilder:
+                (context, error, stackTrace) => const Center(
+                  child: Icon(Icons.error, color: Colors.white, size: 50),
+                ),
           ),
         ),
-        
+
         // Overlay noir en bas pour les informations
         Positioned(
           bottom: 0,
@@ -244,10 +273,7 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageCon
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.7),
-                ],
+                colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
               ),
             ),
             padding: const EdgeInsets.all(16.0),
@@ -258,22 +284,27 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageCon
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundImage: post.user.profilePicture.isEmpty
-                          ? const AssetImage('assets/images/panda.png') as ImageProvider
-                          : NetworkImage(post.user.profilePicture),
+                      backgroundImage:
+                          post.user.profilePicture.isEmpty
+                              ? const AssetImage('assets/images/panda.png')
+                                  as ImageProvider
+                              : NetworkImage(post.user.profilePicture),
                       radius: 16,
-                    ),                    const SizedBox(width: 8),
+                    ),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () {
                         // Navigation vers le profil de l'utilisateur
-                        context.push('/profile/${post.user.userName}');
+                        context.go('/profile/${post.user.userName}');
                       },
                       child: Text(
                         post.user.userName,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline, // Indication visuelle que c'est cliquable
+                          decoration:
+                              TextDecoration
+                                  .underline, // Indication visuelle que c'est cliquable
                         ),
                       ),
                     ),
@@ -299,7 +330,7 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageCon
                   ],
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Titre et description
                 Text(
                   post.name,
@@ -310,7 +341,7 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageCon
                   ),
                 ),
                 const SizedBox(height: 4),
-                
+
                 Row(
                   children: [
                     Text(
@@ -322,14 +353,17 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageCon
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // Actions (like, commentaire)
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.favorite_border, color: Colors.white),
+                      icon: const Icon(
+                        Icons.favorite_border,
+                        color: Colors.white,
+                      ),
                       onPressed: () => _toggleLike(post),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -341,18 +375,25 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageCon
                     ),
                     const SizedBox(width: 16),
                     IconButton(
-                      icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+                      icon: const Icon(
+                        Icons.chat_bubble_outline,
+                        color: Colors.white,
+                      ),
                       onPressed: () => _openCommentsModal(post),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
-                    const SizedBox(width: 4),                    Consumer<SSEProvider>(
+                    const SizedBox(width: 4),
+                    Consumer<SSEProvider>(
                       builder: (context, sseProvider, _) {
                         // Obtenir le nombre de commentaires avec une gestion plus défensive
                         int commentCount;
                         try {
-                          final sseCount = sseProvider.getCommentsCount(post.id);
-                          commentCount = sseCount > 0 ? sseCount : post.commentsCount;
+                          final sseCount = sseProvider.getCommentsCount(
+                            post.id,
+                          );
+                          commentCount =
+                              sseCount > 0 ? sseCount : post.commentsCount;
                         } catch (e) {
                           // En cas d'erreur, revenir au nombre de commentaires du post
                           commentCount = post.commentsCount;
@@ -370,7 +411,7 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {  late PageCon
             ),
           ),
         ),
-        
+
         // Indicateur de défilement supprimé
       ],
     );

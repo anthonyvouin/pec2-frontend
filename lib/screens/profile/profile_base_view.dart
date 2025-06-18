@@ -382,12 +382,12 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
           Divider(height: 1),
           const SizedBox(height: 8),
           if (isFree == true) ...[
-            FreeFeed(currentUser: true, isFree: isFree, userId: _user!.id),
+            FreeFeed(currentUser: true, isFree: isFree, userId: _user!.id, homeFeed: false,),
           ] else if (_user != null &&
               _user!.role == "CONTENT_CREATOR" &&
               !isFree) ...[
             if (_isSubscriber || _currentUser != null) ...[
-              FreeFeed(currentUser: true, isFree: isFree, userId: _user!.id),
+              FreeFeed(currentUser: true, isFree: isFree, userId: _user!.id,  homeFeed: false),
             ] else ...[
               const Text("Vous devez vous abonner pour voir ce contenu"),
             ],

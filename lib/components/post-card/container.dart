@@ -217,7 +217,7 @@ class _PostCardState extends State<PostCard> {
               });
             },
             child: Container(
-              constraints: const BoxConstraints(maxHeight: 400),
+              constraints: const BoxConstraints(maxHeight: 400, minHeight: 400),
               width: double.infinity,
               child: Image(
                 image: widget.post.pictureUrl.isEmpty

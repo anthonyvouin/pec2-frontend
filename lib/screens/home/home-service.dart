@@ -9,17 +9,25 @@ import 'package:image_picker/image_picker.dart';
 
 class PostsListingService {
   final ApiService _apiService = ApiService();
-  Future<PaginatedResponse<Post>> loadPosts({int page = 1, int limit = 10, bool isFree=true,String? userId}) async {
-    String args = "?isFree=$isFree&page=$page&limit=$limit";
-    if(userId != null){
+
+  Future<PaginatedResponse<Post>> loadPosts(
+    int page,
+    int limit,
+    bool isFree,
+    String? userId,
+    bool homeFeed,
+  ) async {
+    String args = "?isFree=$isFree&page=$page&limit=$limit&homeFeed=$homeFeed";
+    if (userId != null) {
       args = "$args&userIs=$userId";
     }
+
     final response = await _apiService.request(
       method: 'get',
       endpoint: '/posts$args',
-      withAuth: false,
+      withAuth: true,
     );
-   
+
     if (response.success) {
       return PaginatedResponse<Post>.fromJson(
         response.data,
@@ -36,12 +44,11 @@ class PostsListingService {
       endpoint: '/posts/$postId',
       withAuth: false,
     );
-   
+
     if (response.success) {
       return Post.fromJson(response.data);
     }
 
     throw Exception('Échec du chargement du post: ${response.error}');
   }
-
 }
