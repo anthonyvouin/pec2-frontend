@@ -30,7 +30,7 @@ class _HomeViewState extends State<HomeView> {
             SizedBox(height: 24),
             CategoriesList(),
             SizedBox(height: 32),
-            FreeFeed(),
+            FreeFeed(currentUser: false, isFree: true),
           ],
         ),
       ),

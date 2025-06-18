@@ -7,13 +7,34 @@ import 'package:image_picker/image_picker.dart';
 
 class PostsListingService {
   final ApiService _apiService = ApiService();
-  Future<List<Post>> loadPosts() async {
+  Future<List<Post>> loadPosts(bool isFree,String? userId) async {
+
+    String args = "?isFree=$isFree";
+    if(userId != null){
+      args = "$args&userIs=$userId";
+    }
+
     final response = await _apiService.request(
       method: 'get',
-      endpoint: '/posts',
+      endpoint: '/posts$args',
       withAuth: false,
     );
    
+    if (response.success) {
+      final List<dynamic> data = response.data;
+      return data.map((post) => Post.fromJson(post)).toList();
+    }
+
+    throw Exception('Échec du chargement des posts: ${response.error}');
+  }
+
+  Future<List<Post>> loadPostsByUser(String userId, bool isFree) async {
+    final response = await _apiService.request(
+      method: 'get',
+      endpoint: '/posts?userIs=$userId&isFree=$isFree',
+      withAuth: false,
+    );
+
     if (response.success) {
       final List<dynamic> data = response.data;
       return data.map((post) => Post.fromJson(post)).toList();

@@ -6,6 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class FreeFeed extends StatefulWidget {
+  final bool currentUser;
+  final bool isFree;
+  final String? userId;
+
+  const FreeFeed({super.key, required this.currentUser, required this.isFree, this.userId});
+
+
   @override
   _FreeFeedState createState() => _FreeFeedState();
 }
@@ -22,6 +29,15 @@ class _FreeFeedState extends State<FreeFeed> {
   }
 
   @override
+  void didUpdateWidget(covariant FreeFeed oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.isFree != widget.isFree || oldWidget.userId != widget.userId) {
+      _loadPosts();
+    }
+  }
+
+  @override
   void dispose() {
     // La déconnexion est gérée par le provider
     // final sseProvider = Provider.of<SSEProvider>(context, listen: false);
@@ -35,12 +51,12 @@ class _FreeFeedState extends State<FreeFeed> {
     });
 
     try {
-      final posts = await _postListingService.loadPosts();
+      final posts = await _postListingService.loadPosts(widget.isFree, widget.userId);
       setState(() {
         _posts = posts;
         _isLoading = false;
       });
-      
+
       // Initialise les connexions SSE pour chaque post
       final sseProvider = Provider.of<SSEProvider>(context, listen: false);
       for (final post in posts) {
@@ -66,6 +82,7 @@ class _FreeFeedState extends State<FreeFeed> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if(!widget.currentUser)
         const Text(
           "Pour vous",
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
