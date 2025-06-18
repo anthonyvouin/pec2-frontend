@@ -27,25 +27,19 @@ class _FreeFeedState extends State<FreeFeed> {
     // final sseProvider = Provider.of<SSEProvider>(context, listen: false);
     // sseProvider.disconnectAll();
     super.dispose();
-  }
-
-  Future<void> _loadPosts() async {
+  }  Future<void> _loadPosts() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final posts = await _postListingService.loadPosts();
+      final paginatedResponse = await _postListingService.loadPosts();
       setState(() {
-        _posts = posts;
+        _posts = paginatedResponse.data;
         _isLoading = false;
       });
       
-      // Initialise les connexions SSE pour chaque post
-      final sseProvider = Provider.of<SSEProvider>(context, listen: false);
-      for (final post in posts) {
-        sseProvider.connectToSSE(post.id);
-      }
+      // Nous ne connectons plus au SSE ici, mais uniquement quand la modal des commentaires est ouverte
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -91,9 +85,11 @@ class _FreeFeedState extends State<FreeFeed> {
       ],
     );
   }
-
   @override
   Widget build(BuildContext context) {
-    return _buildForYouSection();
+    return Provider<List<Post>>.value(
+      value: _posts,
+      child: _buildForYouSection(),
+    );
   }
 }

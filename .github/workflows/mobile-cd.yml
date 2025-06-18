@@ -1,0 +1,49 @@
+name: Mobile Continuous Deployment
+
+on:
+    workflow_run:
+        workflows: [CI]
+        types:
+            - completed
+            
+    workflow_dispatch:
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read  # Nécessaire pour télécharger les artifacts
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download APK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: apk-build
+          path: build/app/outputs/flutter-apk/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Extract version from pubspec.yaml
+        id: version
+        run: |
+          version=$(grep '^version:' pubspec.yaml | cut -d ' ' -f2 | cut -d '+' -f1)          
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ steps.version.outputs.version }}"
+          generate_release_notes: true
+          files: |
+            ./build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Done
+        run: echo "Release v${{ steps.version.outputs.version }} déployée avec succès !"

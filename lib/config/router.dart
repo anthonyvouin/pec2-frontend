@@ -5,6 +5,9 @@ import 'package:firstflutterapp/screens/confirm-email/resend-email-confirmation.
 import 'package:firstflutterapp/screens/creator/creator-view.dart';
 import 'package:firstflutterapp/screens/home/home_view.dart';
 import 'package:firstflutterapp/screens/post-creation/upload-photo.dart';
+import 'package:firstflutterapp/screens/post_detail/post_fullscreen_view.dart';
+import 'package:firstflutterapp/screens/home/home-service.dart';
+import 'package:firstflutterapp/interfaces/post.dart';
 import 'package:firstflutterapp/screens/profile/other_profil_view.dart';
 import 'package:firstflutterapp/screens/profile/profil_view.dart';
 import 'package:firstflutterapp/screens/profile/setting-preferences/setting-preferences.dart';
@@ -60,6 +63,7 @@ const adminKpiDashboard = '/admin/kpi-dashboard';
 const adminCategoriesManagement = '/admin/categories-management';
 const resetPasswordRoute = '/reset-password';
 const confirmResetPasswordRoute = '/reset-password/confirm';
+const postDetailRoute = '/post/:id';
 
 Future<String?> hasAdminPermissions(
   BuildContext context,
@@ -228,6 +232,22 @@ final router = GoRouter(
     GoRoute(
       path: confirmResetPasswordRoute,
       builder: (context, state) => ConfirmResetPasswordPage(),
+    ),    
+    GoRoute(
+      path: postDetailRoute,
+      builder: (context, state) {
+        final postId = state.pathParameters['id'];
+        final allPosts = state.extra as List<Post>?;
+        
+        // On crée une page intermédiaire pour isoler le chargement du post et éviter les problèmes de build
+        return PostFullscreenView(
+            initialPostId: postId!,
+            allPosts: allPosts!,
+          );
+      },
+      redirect: (context, state) {
+        return isAuthenticated(context, state);
+      },
     ),
     ShellRoute(
       builder: (context, state, child) {

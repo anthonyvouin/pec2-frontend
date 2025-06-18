@@ -1,5 +1,5 @@
 import 'dart:io' show File;
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
@@ -403,15 +403,22 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
           height: double.infinity,
           color: Colors.black,
         ),
-        
-        // Image avec filtre en plein écran
+          // Image avec filtre en plein écran
         SizedBox(
           width: MediaQuery.of(context).size.width,
           height: MediaQuery.of(context).size.height,
           child: kIsWeb
-              ? Image.network(
-                  _xFile!.path,
-                  fit: BoxFit.cover,
+              ? FutureBuilder<Uint8List>(
+                  future: _xFile!.readAsBytes(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return Image.memory(
+                        snapshot.data!,
+                        fit: BoxFit.cover,
+                      );
+                    }
+                    return const Center(child: CircularProgressIndicator());
+                  },
                 )
               : Image.file(
                   _image!,

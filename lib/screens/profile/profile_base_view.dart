@@ -63,8 +63,8 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   void initState() {
     super.initState();
     _currentUser = context.read<UserNotifier>().user;
-
-    if (widget.isCurrentUser) {
+    
+    if (widget.isCurrentUser || (widget.username == _currentUser?.userName)) {
       _initCurrentUserProfile();
       _fetchFollowingsAndSync();
     } else {
@@ -337,7 +337,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   }
 
   Widget _buildActionButtons() {
-    if (widget.isCurrentUser) {
+    if (widget.isCurrentUser || (_user?.userName == _currentUser?.userName)) {
       return Column(
         children: [
           Row(

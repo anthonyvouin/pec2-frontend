@@ -27,15 +27,12 @@ class _CommentsModalState extends State<CommentsModal> {
   final TextEditingController _commentController = TextEditingController();
 
   List<Comment> _comments = [];
-  bool _isLoading = true;
-  @override
+  bool _isLoading = true;  @override
   void initState() {
     super.initState();
     _loadComments();
 
-    final sseProvider = context.read<SSEProvider>();
-    // S'assurer que les commentaires SSE sont reflétés dans l'UI
-    sseProvider.connectToSSE(widget.post.id);
+    // Nous n'avons plus besoin de connecter au SSE ici car c'est déjà fait par le parent qui ouvre la modal
   }
 
   Future<void> _loadComments() async {
@@ -49,7 +46,7 @@ class _CommentsModalState extends State<CommentsModal> {
 
     if (response.statusCode == 200) {
       setState(() {
-        _comments = response.data['comments'].map<Comment>((json) => Comment.fromJson(json)).toList();
+        _comments = (response.data['comments'] ?? []).map<Comment>((json) => Comment.fromJson(json)).toList();
         _isLoading= false;
       });
     } else {
@@ -84,9 +81,8 @@ class _CommentsModalState extends State<CommentsModal> {
       setState(() {
         if (comment != null && !_comments.any((c) => c.id == comment.id)) {
           _comments.insert(0, comment);
-        }
-      });
-    } catch (e, stackTrace) {
+        }      });
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur lors de l\'envoi du commentaire: ${e.toString().substring(0, 100)}...'),
