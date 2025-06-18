@@ -84,7 +84,11 @@ class _ConfirmEmailPageState extends State<ConfirmEmailPage> {
                           label: 'Code',
                           validators: [
                             RequiredValidator(),
-                            MinimumValidator(() => _codeController.text),
+                            MinimumValidator(
+                              minLength: 5,
+                              maxLength: 5,
+                              formValue: () => _codeController.text,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 32),

@@ -21,3 +21,8 @@ samples, guidance on mobile development, and a full API reference.
 flutter pub get
 
 ```
+
+## Lancer flutter ouvert à tous les appareils : 
+``` bash 
+flutter run -d web-server --web-hostname=0.0.0.0 --web-port=57119
+```

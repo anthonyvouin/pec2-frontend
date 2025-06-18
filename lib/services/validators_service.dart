@@ -63,9 +63,15 @@ class SamePasswordValidator implements Validator {
 }
 
 class MinimumValidator implements Validator {
-  final String Function() getMinimum;
+  final int minLength;
+  final int maxLength;
+  final String Function()? formValue;
 
-  MinimumValidator(this.getMinimum);
+  MinimumValidator({
+    this.formValue,
+    required this.minLength,
+    required this.maxLength,
+  });
 
   @override
   String? validate(String? value) {
@@ -73,9 +79,26 @@ class MinimumValidator implements Validator {
       return 'Vous devez remplir ce champs';
     }
 
-    if (value.length < 5 || value.length > 5) {
+    if (value.length < minLength || value.length > maxLength) {
       return 'Format incorrect';
     }
+    return null;
+  }
+}
+
+class IsNumberValidator implements Validator {
+  @override
+  String? validate(String? value) {
+    if (value == null) {
+      return 'Champs non complété';
+    }
+
+    print(value);
+
+    if (num.tryParse(value) == null) {
+      return 'Ce champ doit être un nombre';
+    }
+
     return null;
   }
 }

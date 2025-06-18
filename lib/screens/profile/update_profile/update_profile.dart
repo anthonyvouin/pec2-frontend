@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firstflutterapp/components/label-and-input/label-and-input-text.dart';
-import 'package:firstflutterapp/config/constantes.dart';
 import 'package:firstflutterapp/config/router.dart';
 import 'package:firstflutterapp/interfaces/user.dart';
 import 'package:firstflutterapp/utils/check-form-data.dart';

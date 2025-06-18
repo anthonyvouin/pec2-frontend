@@ -24,6 +24,8 @@ class _FreeFeedState extends State<FreeFeed> {
   @override
   void dispose() {
     // La déconnexion est gérée par le provider
+    // final sseProvider = Provider.of<SSEProvider>(context, listen: false);
+    // sseProvider.disconnectAll();
     super.dispose();
   }  Future<void> _loadPosts() async {
     setState(() {
