@@ -54,6 +54,10 @@ jobs:
         echo "Mise à jour de l'image Docker avec le SHA du commit..."
         sed -i "s|image: charlineroyer937/frontend-pec-2:latest|image: charlineroyer937/frontend-pec-2:${{ github.sha }}|g" ./kube-files/kube/prod/front/deployment.yaml
         
+        # Appliquer le configMap pour la configuration
+        echo "Application du ConfigMap..."
+        kubectl apply -f ./kube-files/kube/prod/front/configmap.yaml
+
         # Appliquer le Deployment
         echo "Application du Deployment..."
         kubectl apply -f ./kube-files/kube/prod/front/deployment.yaml
