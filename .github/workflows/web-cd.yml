@@ -54,10 +54,6 @@ jobs:
         echo "Mise à jour de l'image Docker avec le SHA du commit..."
         sed -i "s|image: charlineroyer937/frontend-pec-2:latest|image: charlineroyer937/frontend-pec-2:${{ github.sha }}|g" ./kube-files/kube/prod/front/deployment.yaml
         
-        # Appliquer le Secret backend à partir du secret GitHub
-        echo "${{ secrets.CONFIGMAP_SECRET }}" > back-pec-2-secret-env.yaml
-        kubectl apply -f back-pec-2-secret-env.yaml
-        
         # Appliquer le Deployment
         echo "Application du Deployment..."
         kubectl apply -f ./kube-files/kube/prod/front/deployment.yaml
