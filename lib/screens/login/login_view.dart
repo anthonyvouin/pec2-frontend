@@ -131,6 +131,14 @@ class _LoginViewState extends State<LoginView> {
                             height: 200,
                           ),
                           const SizedBox(height: 16),
+                          // Afficher la baseUrl de l'API
+                          Text(
+                            'Base URL de l\'API: ${_apiService.baseUrl}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
                           const Text(
                             "Ravis de vous revoir sur",
                             textAlign: TextAlign.center,
