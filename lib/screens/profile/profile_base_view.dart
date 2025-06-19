@@ -1,4 +1,5 @@
 import 'package:firstflutterapp/config/router.dart';
+import 'package:firstflutterapp/interfaces/post.dart';
 import 'package:firstflutterapp/interfaces/user.dart';
 import 'package:firstflutterapp/services/api_service.dart';
 import 'package:firstflutterapp/services/toast_service.dart';
@@ -10,11 +11,16 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../components/free-feed/container.dart';
+import '../../components/post-card/container.dart';
+import '../../notifiers/sse_provider.dart';
 import '../../notifiers/userNotififers.dart';
 import 'package:firstflutterapp/components/follow/followers_list.dart';
 import 'package:firstflutterapp/components/follow/followings_list.dart';
 import 'package:firstflutterapp/components/follow/button_follow.dart';
 import 'package:firstflutterapp/screens/message/message.dart';
+
+import '../home/home-service.dart';
 
 class ProfileBaseView extends StatefulWidget {
   final String? username;
@@ -39,6 +45,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   int _followersCount = 0;
   int _followingsCount = 0;
   bool _isFollowed = false;
+  bool isFree = true;
 
   final ApiService _apiService = ApiService();
 
@@ -54,8 +61,17 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
           _followersCount = response.data['followers'] ?? 0;
           _followingsCount = response.data['followings'] ?? 0;
         });
+      } else {
+        ToastService.showToast(
+          "Impossible de récupérer les follows",
+          ToastificationType.error,
+        );
       }
     } catch (e) {
+      ToastService.showToast(
+        "Impossible de récupérer les follows",
+        ToastificationType.error,
+      );
     }
   }
 
@@ -117,7 +133,6 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
       );
 
       if (response.statusCode == 200 && mounted) {
-        print("isFollowed from API: "+response.data['isFollowed'].toString());
         setState(() {
           _user = User.fromJson(response.data['user']);
           _isSubscriber = response.data['isSubscriberToSearchUser'];
@@ -190,10 +205,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             child: Column(
               children: [
                 const TabBar(
-                  tabs: [
-                    Tab(text: 'Followings'),
-                    Tab(text: 'Followers'),
-                  ],
+                  tabs: [Tab(text: 'Followings'), Tab(text: 'Followers')],
                 ),
                 Expanded(
                   child: TabBarView(
@@ -219,14 +231,45 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _user?.userName ?? 'Utilisateur',
+        title: Text("Profile",
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
         ),
+        actions: [
+          if (widget.isCurrentUser)
+            Positioned(
+              right: 0,
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => context.goNamed("statistic-creator"),
+                    icon: const Icon(Icons.timeline),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      if (_user != null) {
+                        context.push('/profile/edit');
+                      }
+                    },
+                    icon: const Icon(Icons.edit),
+                  ),
+                  IconButton(
+                    onPressed: () => context.goNamed("messages"),
+                    icon: const Icon(Icons.mail_outline),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.settings),
+                    onPressed: () {
+                      context.push(profileParams);
+                    },
+                  ),
+                ],
+              ),
+            ),
+        ],
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -248,9 +291,10 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
           Center(
             child: CircleAvatar(
               radius: 48,
-              backgroundImage: _avatarUrl != ""
-                  ? NetworkImage(_avatarUrl) as ImageProvider
-                  : const AssetImage('assets/images/dog.webp'),
+              backgroundImage:
+                  _avatarUrl != ""
+                      ? NetworkImage(_avatarUrl) as ImageProvider
+                      : const AssetImage('assets/images/dog.webp'),
               backgroundColor: const Color(0xFFE4DAFF),
             ),
           ),
@@ -260,32 +304,32 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             children: [
               Center(
                 child: Text(
-                  _user?.userName != null ? '@${_user!.userName}' : '@utilisateur',
+                  _user?.userName != null
+                      ? '@${_user!.userName}'
+                      : '@utilisateur',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              if (widget.isCurrentUser)
-                Positioned(
-                  right: 0,
-                  child: IconButton(
-                    icon: const Icon(Icons.settings),
-                    onPressed: () {
-                      context.push(profileParams);
-                    },
-                  ),
-                ),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildCounter('Following', _followingsCount, () => _showFollowModal(context, false)),
+              _buildCounter(
+                'Following',
+                _followingsCount,
+                () => _showFollowModal(context, false),
+              ),
               _verticalDivider(),
-              _buildCounter('Follower', _followersCount, () => _showFollowModal(context, true)),
+              _buildCounter(
+                'Follower',
+                _followersCount,
+                () => _showFollowModal(context, true),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -302,6 +346,54 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
           ),
           const SizedBox(height: 20),
           _buildActionButtons(),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    isFree = true;
+                  });
+                },
+                child: Icon(
+                  Icons.border_all,
+                  color: isFree == true ? AppTheme.darkColor : Colors.black,
+                ),
+              ),
+              SizedBox(width: 16),
+              _verticalDivider(),
+              SizedBox(width: 16),
+              if (_user != null && _user!.role == "CONTENT_CREATOR")
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      isFree = false;
+                    });
+                  },
+                  child: Icon(
+                    Icons.paid,
+                    color: isFree == false ? AppTheme.darkColor : Colors.black,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Divider(height: 1),
+          const SizedBox(height: 8),
+          if (isFree == true) ...[
+            FreeFeed(currentUser: true, isFree: isFree, userId: _user!.id, homeFeed: false,),
+          ] else if (_user != null &&
+              _user!.role == "CONTENT_CREATOR" &&
+              !isFree) ...[
+            if (_isSubscriber || _currentUser != null) ...[
+              FreeFeed(currentUser: true, isFree: isFree, userId: _user!.id,  homeFeed: false),
+            ] else ...[
+              const Text("Vous devez vous abonner pour voir ce contenu"),
+            ],
+          ] else ...[
+            const Text("Cet utilisateur n'est pas un créateur"),
+          ],
         ],
       ),
     );
@@ -329,11 +421,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   }
 
   Widget _verticalDivider() {
-    return Container(
-      height: 28,
-      width: 1.2,
-      color: Colors.grey[300],
-    );
+    return Container(height: 28, width: 1.2, color: Colors.grey[300]);
   }
 
   Widget _buildActionButtons() {
@@ -343,22 +431,22 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              ElevatedButton(
-                onPressed: () {
-                  if (_user != null) {
-                    context.push('/profile/edit');
-                  }
-                },
-                style: AppTheme.emptyButtonStyle,
-                child: const Text("Modifier le profil"),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  // Statistics feature
-                },
-                style: AppTheme.emptyButtonStyle,
-                child: const Text("Statistiques"),
-              ),
+              // ElevatedButton(
+              //   onPressed: () {
+              //     if (_user != null) {
+              //       context.push('/profile/edit');
+              //     }
+              //   },
+              //   style: AppTheme.emptyButtonStyle,
+              //   child: const Text("Modifier le profil"),
+              // ),
+              // ElevatedButton(
+              //   onPressed: () {
+              //     // Statistics feature
+              //   },
+              //   style: AppTheme.emptyButtonStyle,
+              //   child: const Text("Statistiques"),
+              // ),
             ],
           ),
           const SizedBox(height: 16),
@@ -375,17 +463,17 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             child: const Text("Devenir créateur"),
           ),
           const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MessagePage()),
-              );
-            },
-            icon: const Icon(Icons.mail_outline),
-            label: const Text("Voir mes messages"),
-            style: AppTheme.emptyButtonStyle,
-          ),
+          // ElevatedButton.icon(
+          //   onPressed: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => const MessagePage()),
+          //     );
+          //   },
+          //   icon: const Icon(Icons.mail_outline),
+          //   label: const Text("Voir mes messages"),
+          //   style: AppTheme.emptyButtonStyle,
+          // ),
         ],
       );
     } else {
@@ -412,7 +500,10 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                     if (!_isSubscriber && _stripeLink != null) {
                       final url = Uri.parse(_stripeLink!);
                       if (await canLaunchUrl(url)) {
-                        await launchUrl(url, mode: LaunchMode.externalApplication);
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
                       }
                     } else {
                       _deleteSubscription();
@@ -421,13 +512,16 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(120, 50),
                     backgroundColor:
-                        _isSubscriber ? Colors.red : Theme.of(context).primaryColor,
+                        _isSubscriber
+                            ? Colors.red
+                            : Theme.of(context).primaryColor,
                   ),
                   child: Text(_isSubscriber ? "Se désabonner" : "S'abonner"),
                 ),
               if (_subcriptionCanceled && _subscriptionCanceledAt != null)
                 Text(
-                  "Abonné jusqu'au "+DateFormat('dd/MM/yyyy').format(_subscriptionCanceledAt!),
+                  "Abonné jusqu'au " +
+                      DateFormat('dd/MM/yyyy').format(_subscriptionCanceledAt!),
                 ),
             ],
           ),
@@ -437,15 +531,20 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
               showDialog(
                 context: context,
                 builder: (context) {
-                  final TextEditingController _msgController = TextEditingController();
+                  final TextEditingController _msgController =
+                      TextEditingController();
                   bool sending = false;
                   return StatefulBuilder(
                     builder: (context, setState) {
                       return AlertDialog(
-                        title: Text('Envoyer un message à @${_user?.userName ?? ''}'),
+                        title: Text(
+                          'Envoyer un message à @${_user?.userName ?? ''}',
+                        ),
                         content: TextField(
                           controller: _msgController,
-                          decoration: const InputDecoration(hintText: 'Votre message...'),
+                          decoration: const InputDecoration(
+                            hintText: 'Votre message...',
+                          ),
                           minLines: 1,
                           maxLines: 5,
                         ),
@@ -455,34 +554,49 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                             child: const Text('Annuler'),
                           ),
                           ElevatedButton(
-                            onPressed: sending ? null : () async {
-                              if (_msgController.text.trim().isEmpty) return;
-                              setState(() => sending = true);
-                              final ApiService api = ApiService();
-                              final resp = await api.request(
-                                method: 'POST',
-                                endpoint: '/private-messages',
-                                withAuth: true,
-                                body: {
-                                  'receiverUserName': _user?.userName,
-                                  'content': _msgController.text.trim(),
-                                },
-                              );
-                              setState(() => sending = false);
-                              if (resp.success) {
-                                Navigator.pop(context);
-                                ToastService.showToast(
-                                  'Message envoyé !',
-                                  ToastificationType.success,
-                                );
-                              } else {
-                                ToastService.showToast(
-                                  'Erreur : '+(resp.error ?? 'envoi impossible'),
-                                  ToastificationType.error,
-                                );
-                              }
-                            },
-                            child: sending ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Envoyer'),
+                            onPressed:
+                                sending
+                                    ? null
+                                    : () async {
+                                      if (_msgController.text.trim().isEmpty)
+                                        return;
+                                      setState(() => sending = true);
+                                      final ApiService api = ApiService();
+                                      final resp = await api.request(
+                                        method: 'POST',
+                                        endpoint: '/private-messages',
+                                        withAuth: true,
+                                        body: {
+                                          'receiverUserName': _user?.userName,
+                                          'content': _msgController.text.trim(),
+                                        },
+                                      );
+                                      setState(() => sending = false);
+                                      if (resp.success) {
+                                        Navigator.pop(context);
+                                        ToastService.showToast(
+                                          'Message envoyé !',
+                                          ToastificationType.success,
+                                        );
+                                      } else {
+                                        ToastService.showToast(
+                                          'Erreur : ' +
+                                              (resp.error ??
+                                                  'envoi impossible'),
+                                          ToastificationType.error,
+                                        );
+                                      }
+                                    },
+                            child:
+                                sending
+                                    ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                    : const Text('Envoyer'),
                           ),
                         ],
                       );
@@ -508,10 +622,11 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
         withAuth: true,
       );
       if (response.statusCode == 200 && response.data is List) {
-        final ids = (response.data as List)
-            .map((u) => u['id']?.toString() ?? "")
-            .where((id) => id.isNotEmpty)
-            .toList();
+        final ids =
+            (response.data as List)
+                .map((u) => u['id']?.toString() ?? "")
+                .where((id) => id.isNotEmpty)
+                .toList();
         context.read<UserNotifier>().setFollowedUserIds(ids);
       }
     } catch (e) {

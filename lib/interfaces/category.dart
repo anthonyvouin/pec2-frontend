@@ -2,13 +2,13 @@ class Category {
   final String id;
   final String name;
   final String? description;
-  final String? image;
+  final String? pictureUrl;
 
   Category({
     required this.id,
     required this.name,
     this.description,
-    this.image,
+    this.pictureUrl,
   });
 
   factory Category.fromJson(Map<String, dynamic> json) {
@@ -16,7 +16,7 @@ class Category {
       id: json['id'],
       name: json['name'],
       description: json['description'],
-      image: json['image'],
+      pictureUrl: json['pictureUrl'],
     );
   }
 
@@ -24,6 +24,6 @@ class Category {
     'id': id,
     'name': name,
     'description': description,
-    'image': image,
+    'pictureUrl': pictureUrl,
   };
 }

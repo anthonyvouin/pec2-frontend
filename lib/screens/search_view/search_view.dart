@@ -70,9 +70,13 @@ class _SearchViewState extends State<SearchView> {
         _isLoading = false;
       });
     }
-  }  Future<void> _loadPosts({String? categoryId, String? searchQuery}) async {
-    print('_loadPosts called with categoryId: $categoryId, searchQuery: $searchQuery');
-    
+  }
+
+  Future<void> _loadPosts({String? categoryId, String? searchQuery}) async {
+    print(
+      '_loadPosts called with categoryId: $categoryId, searchQuery: $searchQuery',
+    );
+
     // Ensure loading state is set and clear posts
     setState(() {
       // Clear posts immediately to avoid showing stale data
@@ -80,24 +84,27 @@ class _SearchViewState extends State<SearchView> {
       _isLoading = true;
     });
 
-    try {        
+    try {
       final ApiService apiService = ApiService();
       // Directly use queryParams parameter of the request method
       final Map<String, String> queryParams = {};
       if (categoryId != null && categoryId.isNotEmpty) {
-        queryParams['categories'] = categoryId;  // Modifié de 'category' à 'categories' pour correspondre au backend
+        queryParams['categories'] =
+            categoryId; // Modifié de 'category' à 'categories' pour correspondre au backend
         print('Adding category filter: $categoryId');
       }
       if (searchQuery != null && searchQuery.isNotEmpty) {
         queryParams['search'] = searchQuery;
         print('Adding search query: $searchQuery');
       }
-      
+
       // Log the complete URL for debugging
       final String baseUrl = apiService.baseUrl;
-      final Uri uri = Uri.parse('$baseUrl/posts').replace(queryParameters: queryParams);
+      final Uri uri = Uri.parse(
+        '$baseUrl/posts',
+      ).replace(queryParameters: queryParams);
       print('Full API URL: $uri');
-      
+
       print('Making API request to /posts with params: $queryParams');
       final response = await apiService.request(
         method: 'GET',
@@ -105,13 +112,15 @@ class _SearchViewState extends State<SearchView> {
         withAuth: true,
         queryParams: queryParams,
       );
-      print('API response received: ${response.success}, status code: ${response.statusCode}');
+      print(
+        'API response received: ${response.success}, status code: ${response.statusCode}',
+      );
       if (response.success) {
         print('Response data type: ${response.data.runtimeType}');
       } else {
         print('API request failed with error: ${response.error}');
       }
-      
+
       if (!response.success) {
         // Handle failed response but don't throw
         print('API request failed: ${response.error}');
@@ -119,18 +128,22 @@ class _SearchViewState extends State<SearchView> {
           _posts = [];
           _isLoading = false;
         });
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur lors du chargement des posts: ${response.error}')),
+            SnackBar(
+              content: Text(
+                'Erreur lors du chargement des posts: ${response.error}',
+              ),
+            ),
           );
         }
         return;
       }
-      
+
       print('Raw response data: ${response.data}');
       print('Response data type: ${response.data.runtimeType}');
-        
+
       if (response.success) {
         // Gestion de la structure de réponse avec pagination
         List<dynamic> data;
@@ -161,16 +174,19 @@ class _SearchViewState extends State<SearchView> {
           print('Format de réponse inattendu: ${response.data.runtimeType}');
           print('Unexpected response data: ${response.data}');
           data = [];
-        }        
-          try {          setState(() {
+        }
+        try {
+          setState(() {
             _posts = data.map((post) => Post.fromJson(post)).toList();
             _isLoading = false;
           });
           print('Posts loaded successfully: ${_posts.length} posts');
-          
+
           // Nous ne connectons plus au SSE ici, mais uniquement quand la modal des commentaires est ouverte
           if (_posts.isNotEmpty && mounted) {
-            print('SSE connections will be established only when comment modals are opened');
+            print(
+              'SSE connections will be established only when comment modals are opened',
+            );
           } else {
             print('No posts to connect to SSE or widget not mounted');
           }
@@ -208,27 +224,29 @@ class _SearchViewState extends State<SearchView> {
         );
       }
     }
-  }  void _onCategorySelected(String categoryId) {
+  }
+
+  void _onCategorySelected(String categoryId) {
     print('Catégorie sélectionnée: $categoryId');
-    
+
     // Déconnexion des SSE avant de changer de catégorie
     if (mounted) {
       final sseProvider = Provider.of<SSEProvider>(context, listen: false);
       sseProvider.disconnectAll();
       print('Disconnected all SSE connections before category change');
     }
-    
+
     // Clear any previous searches when changing categories
     if (_searchController.text.isNotEmpty) {
       setState(() {
         _searchController.clear();
       });
     }
-    
+
     setState(() {
       // Reset posts list immediately to avoid showing old data
       _posts = [];
-      
+
       if (_selectedCategoryId == categoryId) {
         // Si la catégorie est déjà sélectionnée, on la désélectionne
         _selectedCategoryId = null;
@@ -237,7 +255,7 @@ class _SearchViewState extends State<SearchView> {
         _selectedCategoryId = categoryId;
         print('Nouvelle catégorie sélectionnée: $_selectedCategoryId');
       }
-      
+
       // Set _isLoading to true immediately to show loading state
       _isLoading = true;
     });
@@ -248,51 +266,50 @@ class _SearchViewState extends State<SearchView> {
       searchQuery: null, // Clear search when changing categories
     );
   }
-  
+
   void _onSearch() {
     print('Recherche avec le terme: ${_searchController.text}');
-    
+
     // Déconnexion des SSE avant de lancer une recherche
     if (mounted) {
       final sseProvider = Provider.of<SSEProvider>(context, listen: false);
       sseProvider.disconnectAll();
       print('Disconnected all SSE connections before search');
     }
-    
+
     // Clear posts first
     setState(() {
       _posts = [];
       _isLoading = true;
     });
-    
+
     // Only use searchQuery if it's not empty
-    final String? searchQuery = _searchController.text.trim().isNotEmpty 
-        ? _searchController.text.trim() 
-        : null;
-    
+    final String? searchQuery =
+        _searchController.text.trim().isNotEmpty
+            ? _searchController.text.trim()
+            : null;
+
     if (searchQuery == null) {
       // If search is empty, just load posts with category filter
       _loadPosts(categoryId: _selectedCategoryId);
       return;
     }
-        
+
     // Search with both filters
-    _loadPosts(
-      categoryId: _selectedCategoryId,
-      searchQuery: searchQuery,
-    );
+    _loadPosts(categoryId: _selectedCategoryId, searchQuery: searchQuery);
   }
+
   void _navigateToPostDetail(Post post) {
     print('Navigation vers le détail du post: ${post.id}');
-    
+
     // Nous ne connectons plus au SSE ici, mais uniquement quand la modal des commentaires est ouverte
     if (mounted) {
       final sseProvider = Provider.of<SSEProvider>(context, listen: false);
-      
+
       // Déconnecter toutes les anciennes connexions
       sseProvider.disconnectAll();
     }
-    
+
     context.push('/post/${post.id}', extra: _posts);
   }
 
@@ -316,7 +333,8 @@ class _SearchViewState extends State<SearchView> {
                 child: Row(
                   children: [
                     const Icon(Icons.search),
-                    const SizedBox(width: 8),                    Expanded(
+                    const SizedBox(width: 8),
+                    Expanded(
                       child: TextField(
                         controller: _searchController,
                         decoration: const InputDecoration(
@@ -336,9 +354,10 @@ class _SearchViewState extends State<SearchView> {
                 ),
               ),
 
-              const SizedBox(height: 16),              
+              const SizedBox(height: 16),
               SizedBox(
-                height: 90, // Augmentation de la hauteur pour éviter le débordement
+                height: 90,
+                // Augmentation de la hauteur pour éviter le débordement
                 child:
                     _isLoading
                         ? const Center(child: CircularProgressIndicator())
@@ -369,16 +388,16 @@ class _SearchViewState extends State<SearchView> {
                                       ),
                                       child: Center(
                                         child:
-                                            category.image != null &&
-                                                    category.image!.isNotEmpty
+                                            category.pictureUrl != null &&
+                                                    category.pictureUrl!.isNotEmpty
                                                 ? ClipRRect(
                                                   borderRadius:
                                                       BorderRadius.circular(30),
                                                   child: Image.network(
-                                                    category.image!,
-                                                    width: 60,
-                                                    height: 60,
-                                                    fit: BoxFit.cover,
+                                                    category.pictureUrl!,
+                                                    width: 45,
+                                                    height: 45,
+                                                    fit: BoxFit.contain,
                                                   ),
                                                 )
                                                 : Text(
@@ -408,35 +427,39 @@ class _SearchViewState extends State<SearchView> {
                         ),
               ),
 
-              const SizedBox(height: 16),              // Grille de posts
+              const SizedBox(height: 16), // Grille de posts
               Expanded(
-                child: _isLoading
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 16),
-                            Text(
-                              _selectedCategoryId != null
-                                  ? 'Chargement des posts pour cette catégorie...'
-                                  : _searchController.text.isNotEmpty
-                                      ? 'Recherche en cours...'
-                                      : 'Chargement des posts...',
-                              style: TextStyle(color: Colors.grey[700]),
-                            ),
-                            if (_selectedCategoryId != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  'Catégorie ID: $_selectedCategoryId',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                                ),
+                child:
+                    _isLoading
+                        ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 16),
+                              Text(
+                                _selectedCategoryId != null
+                                    ? 'Chargement des posts pour cette catégorie...'
+                                    : _searchController.text.isNotEmpty
+                                    ? 'Recherche en cours...'
+                                    : 'Chargement des posts...',
+                                style: TextStyle(color: Colors.grey[700]),
                               ),
-                          ],
-                        ),
-                      )
-                    : _buildPostsGrid(),
+                              if (_selectedCategoryId != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    'Catégorie ID: $_selectedCategoryId',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )
+                        : _buildPostsGrid(),
               ),
             ],
           ),
@@ -444,6 +467,7 @@ class _SearchViewState extends State<SearchView> {
       ),
     );
   }
+
   Widget _buildPostsGrid() {
     if (_posts.isEmpty) {
       return Center(
@@ -478,7 +502,8 @@ class _SearchViewState extends State<SearchView> {
                 ),
               ),
             SizedBox(height: 24),
-            if (_selectedCategoryId != null || _searchController.text.isNotEmpty)
+            if (_selectedCategoryId != null ||
+                _searchController.text.isNotEmpty)
               ElevatedButton.icon(
                 onPressed: () {
                   setState(() {
@@ -499,12 +524,13 @@ class _SearchViewState extends State<SearchView> {
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        childAspectRatio: 2/3,
+        childAspectRatio: 2 / 3,
         crossAxisSpacing: 1,
         mainAxisSpacing: 1,
       ),
       itemCount: _posts.length,
-      itemBuilder: (context, index) {        final post = _posts[index];
+      itemBuilder: (context, index) {
+        final post = _posts[index];
         return GestureDetector(
           onTap: () => _navigateToPostDetail(post),
           child: Card(

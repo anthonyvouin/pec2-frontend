@@ -3,6 +3,7 @@ import 'package:firstflutterapp/notifiers/userNotififers.dart';
 import 'package:firstflutterapp/screens/confirm-email/confirm_email_view.dart';
 import 'package:firstflutterapp/screens/confirm-email/resend-email-confirmation.dart';
 import 'package:firstflutterapp/screens/creator/creator-view.dart';
+import 'package:firstflutterapp/screens/creator/creator_statistics_view.dart';
 import 'package:firstflutterapp/screens/home/home_view.dart';
 import 'package:firstflutterapp/screens/post-creation/upload-photo.dart';
 import 'package:firstflutterapp/screens/post_detail/post_fullscreen_view.dart';
@@ -83,17 +84,13 @@ Future<String?> isAuthenticated(
   GoRouterState state,
 ) async {
   final session = context.read<UserNotifier>();
-  print("🔍 path: ${state.uri.path}");
-
   final allowedUnauthenticatedPaths = ['/stripe-success', '/stripe-error'];
   if (allowedUnauthenticatedPaths.contains(state.uri.path)) {
-    print("✅ Route autorisée sans authentification");
     return null;
   }
   if (await session.isAuthenticated()) {
     return null;
   }
-  print("❌ Redirection vers login");
   return loginRoute;
 }
 
@@ -160,6 +157,11 @@ final router = GoRouter(
               builder: (context, state) => CreatorView(),
             ),
             GoRoute(
+              path: 'statistic-creator',
+              name: 'statistic-creator',
+              builder: (context, state) => CreatorStatisticsView(),
+            ),
+            GoRoute(
               path: 'params',
               name: 'profile-params',
               builder: (context, state) => SettingUser(),
@@ -206,6 +208,11 @@ final router = GoRouter(
       path: '/stripe-error',
       name: 'stripe-error',
       builder: (context, state) => StripeError(),
+    ),
+    GoRoute(
+      path: '/messages',
+      builder: (context, state) => MessagePage(),
+      name: 'messages',
     ),
     GoRoute(path: loginRoute, builder: (context, state) => LoginView()),
     GoRoute(
