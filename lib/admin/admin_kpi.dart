@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'dart:developer' as developer;
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 
 class AdminKpiDashboard extends StatefulWidget {
   const AdminKpiDashboard({Key? key}) : super(key: key);
@@ -14,6 +15,8 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
   bool _isLoading = true;
   Map<String, int> _roleStats = {};
   Map<String, int> _genderStats = {};
+  int _last7DaysRevenue = 0;
+  final currencyFormatter = NumberFormat.currency(locale: 'fr_FR', symbol: '€');
 
   @override
   void initState() {
@@ -34,11 +37,27 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
         endpoint: '/users/stats/gender',
         withAuth: true,
       );
+      
+      // Récupération des revenus des 7 derniers jours
+      final DateTime now = DateTime.now();
+      final DateTime sevenDaysAgo = now.subtract(const Duration(days: 7));
+      
+      final revenueResponse = await ApiService().request(
+        method: 'GET',
+        endpoint: '/subscriptions/revenue',
+        withAuth: true,
+        queryParams: {
+          'start_date': DateFormat('yyyy-MM-dd').format(sevenDaysAgo),
+          'end_date': DateFormat('yyyy-MM-dd').format(now),
+        },
+      );
 
       if (mounted) {
         setState(() {
           _roleStats = Map<String, int>.from(roleResponse.data);
           _genderStats = Map<String, int>.from(genderResponse.data);
+          // L'API retourne le montant en centimes, donc on divise par 100 pour avoir en euros
+          _last7DaysRevenue = (revenueResponse.data['total'] as int) ~/ 100;
           _isLoading = false;
         });
       }
@@ -48,6 +67,7 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
         setState(() {
           _roleStats = {};
           _genderStats = {};
+          _last7DaysRevenue = 0;
           _isLoading = false;
         });
       }
@@ -71,6 +91,8 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
             ),
           ),
           const SizedBox(height: 24),
+          _buildRevenueCard(),
+          const SizedBox(height: 24),
           _buildRoleCards(),
           const SizedBox(height: 32),
           Row(
@@ -80,6 +102,52 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
               const SizedBox(width: 24),
               Expanded(child: _buildGenderChart()),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRevenueCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.purple.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.attach_money, color: Colors.purple, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'Revenus des 7 derniers jours',
+                style: TextStyle(
+                  color: Colors.purple,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            currencyFormatter.format(_last7DaysRevenue),
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Du ${DateFormat('dd/MM/yyyy').format(DateTime.now().subtract(const Duration(days: 7)))} au ${DateFormat('dd/MM/yyyy').format(DateTime.now())}',
+            style: TextStyle(
+              color: Colors.purple.shade700,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
