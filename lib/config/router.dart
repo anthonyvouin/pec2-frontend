@@ -36,6 +36,7 @@ import 'package:firstflutterapp/screens/message/message.dart';
 import 'package:firstflutterapp/admin/admin_kpi.dart';
 import 'package:firstflutterapp/screens/reset-password/request-reset-password.dart';
 import 'package:firstflutterapp/screens/reset-password/confirm-reset-password.dart';
+import 'package:firstflutterapp/admin/revenue_chart_page.dart';
 
 const homeRoute = '/';
 const loginRoute = '/login';
@@ -57,6 +58,7 @@ const adminUsersManagement = '/admin/users';
 const adminContacts = '/admin/contacts';
 const adminUsersChart = '/admin/users-chart';
 const adminContentCreator = '/admin/content-creator';
+const adminRevenueChart = '/admin/revenue-chart';
 const profilePreferences = '/profile/params/preferences';
 const searchRoute = '/search';
 const messageRoute = '/message';
@@ -292,6 +294,10 @@ final router = GoRouter(
         GoRoute(
           path: '$adminRoute/categories-management',
           builder: (context, state) => const CategoriesManagement(),
+        ),
+        GoRoute(
+          path: '$adminRoute/revenue-chart',
+          builder: (context, state) => const RevenueChartPage(),
         ),
       ],
     ),
