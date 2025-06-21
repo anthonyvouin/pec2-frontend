@@ -488,97 +488,156 @@ class _PostsChartState extends State<PostsChart> {
         ),
         SizedBox(
           height: 300,
-          child: BarChart(
-            BarChartData(
-              alignment: BarChartAlignment.spaceAround,
-              maxY: _getMaxCategoryCount() * 1.2,
-              barTouchData: BarTouchData(
-                enabled: true,
-                touchTooltipData: BarTouchTooltipData(
-                  tooltipBgColor: Colors.blueGrey.shade800,
-                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    final category = _categoryData[groupIndex];
-                    return BarTooltipItem(
-                      '${category.name}\n${category.count} posts',
-                      const TextStyle(color: Colors.white),
-                    );
-                  },
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16.0, right: 32.0, bottom: 16.0),
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: _getMaxCategoryCount() * 1.2,
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    tooltipBgColor: Colors.blueGrey.shade800,
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      final category = _categoryData[groupIndex];
+                      return BarTooltipItem(
+                        '${category.name}\n${category.count} posts',
+                        const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              titlesData: FlTitlesData(
-                show: true,
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 80,
-                    getTitlesWidget: (value, meta) {
-                      if (value < 0 || value >= _categoryData.length) {
-                        return const SizedBox.shrink();
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: RotatedBox(
-                          quarterTurns: 1,
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      getTitlesWidget: (value, meta) {
+                        if (value < 0 || value >= _categoryData.length) {
+                          return const SizedBox.shrink();
+                        }
+                        
+                        // Limiter la longueur du texte pour éviter les débordements
+                        String categoryName = _categoryData[value.toInt()].name;
+                        if (categoryName.length > 10) {
+                          categoryName = categoryName.substring(0, 8) + '...';
+                        }
+                        
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
-                            _categoryData[value.toInt()].name,
+                            categoryName,
                             style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
                             ),
-                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 40,
-                    getTitlesWidget: (value, meta) {
-                      return Text(
-                        value.toInt().toString(),
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                topTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                rightTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-              ),
-              borderData: FlBorderData(
-                show: true,
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              gridData: const FlGridData(show: true),
-              barGroups: _categoryData.asMap().entries.map((entry) {
-                final index = entry.key;
-                final category = entry.value;
-                return BarChartGroupData(
-                  x: index,
-                  barRods: [
-                    BarChartRodData(
-                      toY: category.count.toDouble(),
-                      color: category.color,
-                      width: 20,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(4),
-                        topRight: Radius.circular(4),
-                      ),
+                        );
+                      },
                     ),
-                  ],
-                );
-              }).toList(),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      getTitlesWidget: (value, meta) {
+                        if (value == value.roundToDouble()) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Text(
+                              value.toInt().toString(),
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                              textAlign: TextAlign.right,
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                borderData: FlBorderData(
+                  show: true,
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+                    left: BorderSide(color: Colors.grey.shade300, width: 1),
+                  ),
+                ),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: Colors.grey.shade200,
+                    strokeWidth: 1,
+                    dashArray: [5, 5],
+                  ),
+                ),
+                barGroups: _categoryData.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final category = entry.value;
+                  return BarChartGroupData(
+                    x: index,
+                    barRods: [
+                      BarChartRodData(
+                        toY: category.count.toDouble(),
+                        color: category.color,
+                        width: 25,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(4),
+                          topRight: Radius.circular(4),
+                        ),
+                        backDrawRodData: BackgroundBarChartRodData(
+                          show: true,
+                          toY: _getMaxCategoryCount() * 1.2,
+                          color: Colors.grey.shade100,
+                        ),
+                      ),
+                    ],
+                    showingTooltipIndicators: [0],
+                  );
+                }).toList(),
+              ),
             ),
+          ),
+        ),
+        // Légende des catégories
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Wrap(
+            spacing: 16.0,
+            runSpacing: 8.0,
+            children: _categoryData.map((cat) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: cat.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${cat.name} (${cat.count})',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              );
+            }).toList(),
           ),
         ),
       ],
