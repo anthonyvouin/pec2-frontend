@@ -4,6 +4,26 @@ import 'dart:developer' as developer;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
+class TopCreator {
+  final String contentCreatorId;
+  final String userName;
+  final int subscriptionCount;
+
+  TopCreator({
+    required this.contentCreatorId,
+    required this.userName,
+    required this.subscriptionCount,
+  });
+
+  factory TopCreator.fromJson(Map<String, dynamic> json) {
+    return TopCreator(
+      contentCreatorId: json['content_creator_id'] as String,
+      userName: json['user_name'] as String,
+      subscriptionCount: (json['subscription_count'] as int?) ?? 0,
+    );
+  }
+}
+
 class AdminKpiDashboard extends StatefulWidget {
   const AdminKpiDashboard({Key? key}) : super(key: key);
 
@@ -16,6 +36,7 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
   Map<String, int> _roleStats = {};
   Map<String, int> _genderStats = {};
   int _last7DaysRevenue = 0;
+  List<TopCreator> _topCreators = [];
   final currencyFormatter = NumberFormat.currency(locale: 'fr_FR', symbol: '€');
 
   @override
@@ -51,6 +72,13 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
           'end_date': DateFormat('yyyy-MM-dd').format(now),
         },
       );
+      
+      // Récupération du top 3 des créateurs
+      final topCreatorsResponse = await ApiService().request(
+        method: 'GET',
+        endpoint: '/subscriptions/top-creators',
+        withAuth: true,
+      );
 
       if (mounted) {
         setState(() {
@@ -58,6 +86,14 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
           _genderStats = Map<String, int>.from(genderResponse.data);
           // L'API retourne le montant en centimes, donc on divise par 100 pour avoir en euros
           _last7DaysRevenue = (revenueResponse.data['total'] as int) ~/ 100;
+          
+          // Traitement du top 3 des créateurs
+          if (topCreatorsResponse.success && topCreatorsResponse.data is List) {
+            _topCreators = (topCreatorsResponse.data as List)
+                .map((item) => TopCreator.fromJson(item as Map<String, dynamic>))
+                .toList();
+          }
+          
           _isLoading = false;
         });
       }
@@ -68,6 +104,7 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
           _roleStats = {};
           _genderStats = {};
           _last7DaysRevenue = 0;
+          _topCreators = [];
           _isLoading = false;
         });
       }
@@ -102,6 +139,132 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
               const SizedBox(width: 24),
               Expanded(child: _buildGenderChart()),
             ],
+          ),
+          const SizedBox(height: 32),
+          _buildTopCreatorsSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopCreatorsSection() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Top 3 des Créateurs',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (_topCreators.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 24.0),
+                child: Text(
+                  'Aucun créateur avec des abonnements actifs',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ),
+            )
+          else
+            Column(
+              children: [
+                for (int i = 0; i < _topCreators.length; i++)
+                  _buildTopCreatorItem(i, _topCreators[i]),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopCreatorItem(int index, TopCreator creator) {
+    final colors = [
+      Colors.amber.shade300, // Or (1er)
+      Colors.blueGrey.shade300, // Argent (2ème)
+      Colors.brown.shade300, // Bronze (3ème)
+    ];
+    
+    final icons = [
+      Icons.emoji_events, // Trophée (1er)
+      Icons.workspace_premium, // Premium (2ème)
+      Icons.military_tech, // Médaille (3ème)
+    ];
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors[index].withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colors[index], width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colors[index],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icons[index],
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '@${creator.userName}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'ID: ${creator.contentCreatorId}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: colors[index].withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              '${creator.subscriptionCount} abonnés',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colors[index].withOpacity(0.8),
+              ),
+            ),
           ),
         ],
       ),
