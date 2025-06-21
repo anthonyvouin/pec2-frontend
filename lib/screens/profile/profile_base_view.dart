@@ -491,10 +491,10 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                   await _fetchFollowingsAndSync();
                   _fetchFollowCounts();
                   _fetchOtherUserData();
-                },
-              ),
+                },              ),
               const SizedBox(width: 10),
-              if (_user?.role == "CONTENT_CREATOR" && !_subcriptionCanceled)
+              // Afficher le bouton d'abonnement uniquement si l'utilisateur accepte les abonnements
+              if (_user?.role == "CONTENT_CREATOR" && !_subcriptionCanceled && _user?.subscriptionEnabled != false)
                 ElevatedButton(
                   onPressed: () async {
                     if (!_isSubscriber && _stripeLink != null) {
@@ -526,89 +526,91 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             ],
           ),
           const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) {
-                  final TextEditingController _msgController =
-                      TextEditingController();
-                  bool sending = false;
-                  return StatefulBuilder(
-                    builder: (context, setState) {
-                      return AlertDialog(
-                        title: Text(
-                          'Envoyer un message à @${_user?.userName ?? ''}',
-                        ),
-                        content: TextField(
-                          controller: _msgController,
-                          decoration: const InputDecoration(
-                            hintText: 'Votre message...',
+          // Afficher le bouton d'envoi de message uniquement si l'utilisateur accepte les messages
+          if (_user?.messageEnabled != false && !widget.isCurrentUser)
+            ElevatedButton.icon(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    final TextEditingController _msgController =
+                        TextEditingController();
+                    bool sending = false;
+                    return StatefulBuilder(
+                      builder: (context, setState) {
+                        return AlertDialog(
+                          title: Text(
+                            'Envoyer un message à @${_user?.userName ?? ''}',
                           ),
-                          minLines: 1,
-                          maxLines: 5,
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Annuler'),
+                          content: TextField(
+                            controller: _msgController,
+                            decoration: const InputDecoration(
+                              hintText: 'Votre message...',
+                            ),
+                            minLines: 1,
+                            maxLines: 5,
                           ),
-                          ElevatedButton(
-                            onPressed:
-                                sending
-                                    ? null
-                                    : () async {
-                                      if (_msgController.text.trim().isEmpty)
-                                        return;
-                                      setState(() => sending = true);
-                                      final ApiService api = ApiService();
-                                      final resp = await api.request(
-                                        method: 'POST',
-                                        endpoint: '/private-messages',
-                                        withAuth: true,
-                                        body: {
-                                          'receiverUserName': _user?.userName,
-                                          'content': _msgController.text.trim(),
-                                        },
-                                      );
-                                      setState(() => sending = false);
-                                      if (resp.success) {
-                                        Navigator.pop(context);
-                                        ToastService.showToast(
-                                          'Message envoyé !',
-                                          ToastificationType.success,
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Annuler'),
+                            ),
+                            ElevatedButton(
+                              onPressed:
+                                  sending
+                                      ? null
+                                      : () async {
+                                        if (_msgController.text.trim().isEmpty)
+                                          return;
+                                        setState(() => sending = true);
+                                        final ApiService api = ApiService();
+                                        final resp = await api.request(
+                                          method: 'POST',
+                                          endpoint: '/private-messages',
+                                          withAuth: true,
+                                          body: {
+                                            'receiverUserName': _user?.userName,
+                                            'content': _msgController.text.trim(),
+                                          },
                                         );
-                                      } else {
-                                        ToastService.showToast(
-                                          'Erreur : ' +
-                                              (resp.error ??
-                                                  'envoi impossible'),
-                                          ToastificationType.error,
-                                        );
-                                      }
-                                    },
-                            child:
-                                sending
-                                    ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                    : const Text('Envoyer'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              );
-            },
-            icon: const Icon(Icons.mail_outline),
-            label: const Text('Envoyer un message'),
-            style: AppTheme.emptyButtonStyle,
-          ),
+                                        setState(() => sending = false);
+                                        if (resp.success) {
+                                          Navigator.pop(context);
+                                          ToastService.showToast(
+                                            'Message envoyé !',
+                                            ToastificationType.success,
+                                          );
+                                        } else {
+                                          ToastService.showToast(
+                                            'Erreur : ' +
+                                                (resp.error ??
+                                                    'envoi impossible'),
+                                            ToastificationType.error,
+                                          );
+                                        }
+                                      },
+                              child:
+                                  sending
+                                      ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                      : const Text('Envoyer'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+              icon: const Icon(Icons.mail_outline),
+              label: const Text('Envoyer un message'),
+              style: AppTheme.emptyButtonStyle,
+            ),
         ],
       );
     }

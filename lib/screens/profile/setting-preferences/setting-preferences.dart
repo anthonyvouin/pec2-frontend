@@ -3,24 +3,41 @@ import 'package:flutter/material.dart';
 import 'package:firstflutterapp/services/user_settings_service.dart';
 import 'package:firstflutterapp/services/toast_service.dart';
 import 'package:toastification/toastification.dart';
+import 'package:provider/provider.dart';
+import 'package:firstflutterapp/notifiers/userNotififers.dart';
+import 'package:firstflutterapp/interfaces/user.dart';
 
 class SettingPreferences extends StatefulWidget {
   @override
   _SettingPreferencesState createState() => _SettingPreferencesState();
 }
 
-class _SettingPreferencesState extends State<SettingPreferences> {
-  bool _isDarkMode = false;
+class _SettingPreferencesState extends State<SettingPreferences> {  bool _isDarkMode = false;
   bool _commentsEnabled = true;
   bool _privateMessagesEnabled = true;
+  bool _subscriptionEnabled = true;
   bool _isLoading = true;
-  final UserSettingsService _settingsService = UserSettingsService();
-
-  @override
+  bool _isContentCreator = false;
+  final UserSettingsService _settingsService = UserSettingsService();  @override
   void initState() {
     super.initState();
     _loadThemePreference();
     _loadUserSettings();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkUserRole();
+  }
+
+  void _checkUserRole() {
+    final userNotifier = Provider.of<UserNotifier>(context, listen: false);
+    if (userNotifier.user != null) {
+      setState(() {
+        _isContentCreator = userNotifier.user!.role == "CONTENT_CREATOR";
+      });
+    }
   }
 
   Future<void> _loadThemePreference() async {
@@ -36,10 +53,10 @@ class _SettingPreferencesState extends State<SettingPreferences> {
     try {
       final response = await _settingsService.getUserSettings();
       
-      if (response.success && response.data != null) {
-        setState(() {
+      if (response.success && response.data != null) {        setState(() {
           _commentsEnabled = response.data!.commentEnabled;
           _privateMessagesEnabled = response.data!.messageEnabled;
+          _subscriptionEnabled = response.data!.subscriptionEnabled;
         });
       } else {
         ToastService.showToast(
@@ -130,6 +147,42 @@ class _SettingPreferencesState extends State<SettingPreferences> {
       });
     }
   }
+
+  Future<void> _updateSubscriptionEnabled(bool value) async {
+    try {
+      final response = await _settingsService.updateUserSettings(
+        subscriptionEnabled: value,
+      );
+
+      if (response.success) {
+        setState(() {
+          _subscriptionEnabled = value;
+        });
+        ToastService.showToast(
+          'Préférences d\'abonnement mises à jour',
+          ToastificationType.success,
+        );
+      } else {
+        ToastService.showToast(
+          response.error ?? 'Erreur lors de la mise à jour',
+          ToastificationType.error,
+        );
+        // Revenir à l'état précédent en cas d'échec
+        setState(() {
+          _subscriptionEnabled = !value;
+        });
+      }
+    } catch (e) {
+      ToastService.showToast(
+        'Une erreur est survenue: $e',
+        ToastificationType.error,
+      );
+      // Revenir à l'état précédent en cas d'échec
+      setState(() {
+        _subscriptionEnabled = !value;
+      });
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -185,8 +238,7 @@ class _SettingPreferencesState extends State<SettingPreferences> {
                     Icons.comment,
                     color: _commentsEnabled ? Colors.green : Colors.grey,
                   ),
-                ),
-                SwitchListTile(
+                ),                SwitchListTile(
                   title: const Text("Messages privés"),
                   subtitle: const Text("Autoriser les messages privés"),
                   value: _privateMessagesEnabled,
@@ -198,6 +250,20 @@ class _SettingPreferencesState extends State<SettingPreferences> {
                     color: _privateMessagesEnabled ? Colors.green : Colors.grey,
                   ),
                 ),
+                // N'afficher l'option d'abonnement que pour les créateurs de contenu
+                if (_isContentCreator)
+                  SwitchListTile(
+                    title: const Text("Abonnement"),
+                    subtitle: const Text("Activer/désactiver les abonnements"),
+                    value: _subscriptionEnabled,
+                    onChanged: (bool value) {
+                      _updateSubscriptionEnabled(value);
+                    },
+                    secondary: Icon(
+                      Icons.monetization_on,
+                      color: _subscriptionEnabled ? Colors.green : Colors.grey,
+                    ),
+                  ),
               ],
             ),
     );

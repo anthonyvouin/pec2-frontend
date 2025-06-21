@@ -3,12 +3,14 @@ import 'package:firstflutterapp/services/api_service.dart';
 class UserSettings {
   final bool commentEnabled;
   final bool messageEnabled;
+  final bool subscriptionEnabled;
   final String? id;
   final String? userId;
 
   UserSettings({
     required this.commentEnabled, 
     required this.messageEnabled,
+    required this.subscriptionEnabled,
     this.id,
     this.userId
   });
@@ -20,6 +22,7 @@ class UserSettings {
       userId: json['userId'],
       commentEnabled: json['commentEnabled'] ?? true,
       messageEnabled: json['messageEnabled'] ?? true,
+      subscriptionEnabled: json['subscriptionEnabled'] ?? true,
     );
   }
 
@@ -29,6 +32,7 @@ class UserSettings {
       'userId': userId,
       'commentEnabled': commentEnabled,
       'messageEnabled': messageEnabled,
+      'subscriptionEnabled': subscriptionEnabled,
     };
   }
 }
@@ -107,6 +111,7 @@ class UserSettingsService {
   }  Future<ApiResponse<UserSettings>> updateUserSettings({
     bool? commentEnabled,
     bool? messageEnabled,
+    bool? subscriptionEnabled,
   }) async {
     try {
       final Map<String, dynamic> updates = {};
@@ -117,6 +122,10 @@ class UserSettingsService {
       
       if (messageEnabled != null) {
         updates['messageEnabled'] = messageEnabled;
+      }
+      
+      if (subscriptionEnabled != null) {
+        updates['subscriptionEnabled'] = subscriptionEnabled;
       }
 
       final response = await _apiService.request(

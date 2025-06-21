@@ -10,6 +10,8 @@ class PrivateMessage {
   final String senderName;
   final String receiverName;
   final bool isCurrentUser;
+  final bool senderMessageEnable;
+  final bool receiverMessageEnable;
 
   PrivateMessage({
     required this.id,
@@ -21,6 +23,8 @@ class PrivateMessage {
     required this.senderName,
     required this.receiverName,
     required this.isCurrentUser,
+    this.senderMessageEnable = true,
+    this.receiverMessageEnable = true,
   });
 
   factory PrivateMessage.fromJson(Map<String, dynamic> json) {
@@ -34,6 +38,8 @@ class PrivateMessage {
       senderName: json['senderName'] ?? '',
       receiverName: json['receiverName'] ?? '',
       isCurrentUser: json['isCurrentUser'] ?? false,
+      senderMessageEnable: json['senderMessageEnable'] ?? true,
+      receiverMessageEnable: json['receiverMessageEnable'] ?? true,
     );
   }
 }
