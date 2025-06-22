@@ -75,6 +75,7 @@ class SideMenu extends StatelessWidget {
             _buildMenuItem(4, "Créateurs ", Icons.group),
             _buildMenuItem(5, "Catégories", Icons.category),
             _buildMenuItem(6, "Revenus", Icons.attach_money),
+            _buildMenuItem(7, "Posts", Icons.post_add),
             const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),

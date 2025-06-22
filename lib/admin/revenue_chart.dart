@@ -3,16 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
+import 'dart:math' show max;
 
 class RevenueData {
   final DateTime date;
   final int amount;
   final String label;
+  final int count;
 
   RevenueData({
     required this.date,
     required this.amount,
     required this.label,
+    this.count = 0,
   });
 }
 
@@ -29,6 +32,7 @@ class _RevenueChartState extends State<RevenueChart> {
   DateTime _endDate = DateTime.now();
   int _totalRevenue = 0;
   String _error = '';
+  List<RevenueData> _revenueData = [];
   final currencyFormatter = NumberFormat.currency(locale: 'fr_FR', symbol: '€');
   
   @override
@@ -60,8 +64,43 @@ class _RevenueChartState extends State<RevenueChart> {
         throw Exception(response.error ?? 'Failed to retrieve revenue data');
       }
 
+      // Vérifier si les données sont nulles
+      if (response.data == null) {
+        setState(() {
+          _totalRevenue = 0;
+          _revenueData = [];
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final int totalRevenue = (response.data['total'] as int?) ?? 0;
+      final int revenueInEuros = totalRevenue ~/ 100;
+      
+      // Traiter les données journalières
+      final List<dynamic> dailyDataRaw = response.data['daily_data'] as List<dynamic>? ?? [];
+      final List<RevenueData> revenueData = [];
+      
+      for (var data in dailyDataRaw) {
+        final String dateStr = data['date'] as String;
+        final DateTime date = DateTime.parse(dateStr);
+        final int amount = (data['amount'] as int) ~/ 100; // Convertir les centimes en euros
+        final int count = data['count'] as int;
+        
+        revenueData.add(RevenueData(
+          date: date,
+          amount: amount,
+          count: count,
+          label: DateFormat('d MMM', 'fr_FR').format(date),
+        ));
+      }
+
+      // Ajouter des jours sans revenus pour compléter le graphique
+      final List<RevenueData> completeData = _fillMissingDates(_startDate, _endDate, revenueData);
+
       setState(() {
-        _totalRevenue = (response.data['total'] as int) ~/ 100;
+        _totalRevenue = revenueInEuros;
+        _revenueData = completeData;
         _isLoading = false;
       });
     } catch (e) {
@@ -71,6 +110,38 @@ class _RevenueChartState extends State<RevenueChart> {
       });
       debugPrint('Error fetching revenue data: $e');
     }
+  }
+
+  List<RevenueData> _fillMissingDates(DateTime start, DateTime end, List<RevenueData> existingData) {
+    final List<RevenueData> result = [];
+    final Map<String, RevenueData> existingDataMap = {};
+    
+    // Créer un map des données existantes pour faciliter la recherche
+    for (var data in existingData) {
+      final String dateKey = DateFormat('yyyy-MM-dd').format(data.date);
+      existingDataMap[dateKey] = data;
+    }
+    
+    // Ajouter une entrée pour chaque jour de la période
+    for (int i = 0; i <= end.difference(start).inDays; i++) {
+      final DateTime currentDate = start.add(Duration(days: i));
+      final String dateKey = DateFormat('yyyy-MM-dd').format(currentDate);
+      
+      if (existingDataMap.containsKey(dateKey)) {
+        // Utiliser les données existantes
+        result.add(existingDataMap[dateKey]!);
+      } else {
+        // Créer une entrée avec montant 0
+        result.add(RevenueData(
+          date: currentDate,
+          amount: 0,
+          count: 0,
+          label: DateFormat('d MMM', 'fr_FR').format(currentDate),
+        ));
+      }
+    }
+    
+    return result;
   }
 
   @override
@@ -102,12 +173,18 @@ class _RevenueChartState extends State<RevenueChart> {
             else if (_error.isNotEmpty)
               Center(
                 child: Text(
-                  'Error: $_error',
+                  'Erreur: $_error',
                   style: const TextStyle(color: Colors.red),
                 ),
               )
             else
-              _buildRevenueDisplay(),
+              Column(
+                children: [
+                  _buildRevenueDisplay(),
+                  const SizedBox(height: 24),
+                  _buildRevenueChart(),
+                ],
+              ),
           ],
         ),
       ),
@@ -137,7 +214,7 @@ class _RevenueChartState extends State<RevenueChart> {
           ),
           const SizedBox(height: 16),
           Text(
-            'From ${DateFormat('dd/MM/yyyy').format(_startDate)} to ${DateFormat('dd/MM/yyyy').format(_endDate)}',
+            'Du ${DateFormat('dd/MM/yyyy').format(_startDate)} au ${DateFormat('dd/MM/yyyy').format(_endDate)}',
             style: const TextStyle(
               fontSize: 14,
               color: Colors.grey,
@@ -146,6 +223,153 @@ class _RevenueChartState extends State<RevenueChart> {
         ],
       ),
     );
+  }
+
+  Widget _buildRevenueChart() {
+    if (_revenueData.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24.0),
+          child: Text('Aucune donnée disponible pour cette période'),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 300,
+      child: LineChart(
+        LineChartData(
+          minY: 0,
+          minX: 0,
+          maxX: (_revenueData.length - 1).toDouble(),
+          maxY: _getMaxY(),
+          gridData: const FlGridData(show: true),
+          clipData: const FlClipData.all(),
+          titlesData: FlTitlesData(
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                getTitlesWidget: (value, meta) {
+                  if (value >= 0 && value == value.roundToDouble()) {
+                    return Text(
+                      currencyFormatter.format(value).split(',')[0], // Simplifié pour l'axe
+                      style: const TextStyle(fontSize: 10),
+                    );
+                  }
+                  return const Text('');
+                },
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                interval: 1,
+                getTitlesWidget: (value, meta) {
+                  final int index = value.toInt();
+                  if (index < 0 || index >= _revenueData.length) {
+                    return const Text('');
+                  }
+
+                  // Afficher seulement certaines dates pour éviter l'encombrement
+                  final int daysTotal = _revenueData.length;
+                  int interval = (daysTotal / 6).ceil(); // Environ 6 étiquettes
+                  interval = max(1, interval);
+                  
+                  if (index % interval == 0 || index == _revenueData.length - 1) {
+                    return SideTitleWidget(
+                      axisSide: meta.axisSide,
+                      child: Text(
+                        _revenueData[index].label,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  }
+                  return const Text('');
+                },
+              ),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+          ),
+          borderData: FlBorderData(
+            show: true,
+            border: Border(
+              bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+              left: BorderSide(color: Colors.grey.shade300, width: 1),
+            ),
+          ),
+          lineBarsData: [
+            LineChartBarData(
+              spots: _revenueData.asMap().entries.map((entry) {
+                return FlSpot(entry.key.toDouble(), entry.value.amount.toDouble());
+              }).toList(),
+              isCurved: true,
+              preventCurveOverShooting: true,
+              color: Theme.of(context).primaryColor,
+              barWidth: 3,
+              dotData: const FlDotData(show: true),
+              belowBarData: BarAreaData(
+                show: true,
+                color: Theme.of(context).primaryColor.withOpacity(0.2),
+                cutOffY: 0,
+                applyCutOffY: true,
+              ),
+            ),
+          ],
+          lineTouchData: LineTouchData(
+            enabled: true,
+            touchTooltipData: LineTouchTooltipData(
+              tooltipBgColor: Colors.black87,
+              tooltipRoundedRadius: 8,
+              fitInsideHorizontally: true,
+              fitInsideVertically: true,
+              getTooltipItems: (touchedSpots) {
+                return touchedSpots.map((touchedSpot) {
+                  final index = touchedSpot.x.toInt();
+                  if (index >= 0 && index < _revenueData.length) {
+                    final data = _revenueData[index];
+                    final String countText = data.count > 0 
+                        ? '\n${data.count} transaction${data.count > 1 ? 's' : ''}' 
+                        : '';
+                    return LineTooltipItem(
+                      '${data.label}\n${currencyFormatter.format(data.amount)}$countText',
+                      const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  }
+                  return null;
+                }).toList();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  double _getMaxY() {
+    if (_revenueData.isEmpty) return 10;
+    
+    double maxValue = 0;
+    for (var data in _revenueData) {
+      if (data.amount > maxValue) {
+        maxValue = data.amount.toDouble();
+      }
+    }
+    
+    // Ajouter un peu d'espace au-dessus de la valeur maximale
+    return maxValue > 0 ? maxValue * 1.2 : 10;
   }
 
   Widget _buildDateRangeControls() {
