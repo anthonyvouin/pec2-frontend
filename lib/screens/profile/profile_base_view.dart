@@ -79,7 +79,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   void initState() {
     super.initState();
     _currentUser = context.read<UserNotifier>().user;
-    
+
     if (widget.isCurrentUser || (widget.username == _currentUser?.userName)) {
       _initCurrentUserProfile();
       _fetchFollowingsAndSync();
@@ -210,8 +210,8 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      FollowingsList(userId: _user?.id ?? ""),
-                      FollowersList(userId: _user?.id ?? ""),
+                      FollowingsList(searchUser: _user?.id ?? ""),
+                      FollowersList(searchUser: _user?.id ?? ""),
                     ],
                   ),
                 ),
@@ -231,7 +231,8 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Profile",
+        title: Text(
+          "Profile",
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -382,12 +383,22 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
           Divider(height: 1),
           const SizedBox(height: 8),
           if (isFree == true) ...[
-            FreeFeed(currentUser: true, isFree: isFree, userId: _user!.id, homeFeed: false,),
+            FreeFeed(
+              currentUser: true,
+              isFree: isFree,
+              userId: _user!.id,
+              homeFeed: false,
+            ),
           ] else if (_user != null &&
               _user!.role == "CONTENT_CREATOR" &&
               !isFree) ...[
             if (_isSubscriber || _currentUser != null) ...[
-              FreeFeed(currentUser: true, isFree: isFree, userId: _user!.id,  homeFeed: false),
+              FreeFeed(
+                currentUser: true,
+                isFree: isFree,
+                userId: _user!.id,
+                homeFeed: false,
+              ),
             ] else ...[
               const Text("Vous devez vous abonner pour voir ce contenu"),
             ],
@@ -428,27 +439,6 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     if (widget.isCurrentUser || (_user?.userName == _currentUser?.userName)) {
       return Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // ElevatedButton(
-              //   onPressed: () {
-              //     if (_user != null) {
-              //       context.push('/profile/edit');
-              //     }
-              //   },
-              //   style: AppTheme.emptyButtonStyle,
-              //   child: const Text("Modifier le profil"),
-              // ),
-              // ElevatedButton(
-              //   onPressed: () {
-              //     // Statistics feature
-              //   },
-              //   style: AppTheme.emptyButtonStyle,
-              //   child: const Text("Statistiques"),
-              // ),
-            ],
-          ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
@@ -463,17 +453,6 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             child: const Text("Devenir créateur"),
           ),
           const SizedBox(height: 16),
-          // ElevatedButton.icon(
-          //   onPressed: () {
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(builder: (context) => const MessagePage()),
-          //     );
-          //   },
-          //   icon: const Icon(Icons.mail_outline),
-          //   label: const Text("Voir mes messages"),
-          //   style: AppTheme.emptyButtonStyle,
-          // ),
         ],
       );
     } else {

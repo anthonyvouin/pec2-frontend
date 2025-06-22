@@ -60,7 +60,7 @@ class _FreeFeedState extends State<FreeFeed> {
         10,
         widget.isFree,
         widget.userId,
-        false,
+        widget.homeFeed,
       );
       setState(() {
         _posts = paginatedResponse.data;
@@ -94,39 +94,11 @@ class _FreeFeedState extends State<FreeFeed> {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
         const SizedBox(height: 24),
-        // GridView.builder(
-        //   shrinkWrap: true,
-        //   physics: const NeverScrollableScrollPhysics(),
-        //   itemCount: _posts.length,
-        //   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        //     maxCrossAxisExtent: 600,
-        //     childAspectRatio: 2 / 3,
-        //     crossAxisSpacing: 8,
-        //     mainAxisSpacing: 8,
-        //   ),
-        //   itemBuilder: (context, index) {
-        //     final post = _posts[index];
-        //     return Consumer<SSEProvider>(
-        //       builder: (context, sseProvider, _) {
-        //         final isConnected = sseProvider.isConnected(post.id);
-        //         return ConstrainedBox(
-        //           constraints: const BoxConstraints(
-        //             maxHeight: 500, // ✅ Hauteur minimale ici
-        //           ),
-        //           child: PostCard(
-        //             post: post,
-        //             isSSEConnected: isConnected,
-        //           ),
-        //         );
-        //       },
-        //     );
-        //   },
-        // ),
         Column(
           children: [
             Wrap(
-              spacing: 8, // espace horizontal entre les cartes
-              runSpacing: 8, // espace vertical entre les lignes
+              spacing: 8,
+              runSpacing: 8,
               children:
                   _posts.map((post) {
                     return Consumer<SSEProvider>(
@@ -150,24 +122,6 @@ class _FreeFeedState extends State<FreeFeed> {
             ),
           ],
         ),
-
-        // ListView.builder(
-        //   physics: const NeverScrollableScrollPhysics(),
-        //   shrinkWrap: true,
-        //   itemCount: _posts.length,
-        //   itemBuilder: (_, index) {
-        //     final post = _posts[index];
-        //     return Consumer<SSEProvider>(
-        //       builder: (context, sseProvider, _) {
-        //         final isConnected = sseProvider.isConnected(post.id);
-        //         return PostCard(
-        //           post: post,
-        //           isSSEConnected: isConnected,
-        //         );
-        //       },
-        //     );
-        //   },
-        // ),
       ],
     );
   }
