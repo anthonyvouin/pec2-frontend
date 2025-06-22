@@ -230,47 +230,86 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // appBar: AppBar(
+      //   title: Text(
+      //     "Profile",
+      //     style: const TextStyle(
+      //       fontSize: 24,
+      //       fontWeight: FontWeight.bold,
+      //       color: Colors.black,
+      //     ),
+      //   ),
+      //   actions: [
+      //     if (widget.isCurrentUser)
+      //       Positioned(
+      //         right: 0,
+      //         child: Row(
+      //           children: [
+      //             IconButton(
+      //               onPressed: () => context.goNamed("statistic-creator"),
+      //               icon: const Icon(Icons.timeline),
+      //             ),
+      //             IconButton(
+      //               onPressed: () {
+      //                 if (_user != null) {
+      //                   context.push('/profile/edit');
+      //                 }
+      //               },
+      //               icon: const Icon(Icons.edit),
+      //             ),
+      //             IconButton(
+      //               onPressed: () => context.goNamed("messages"),
+      //               icon: const Icon(Icons.mail_outline),
+      //             ),
+      //             IconButton(
+      //               icon: const Icon(Icons.settings),
+      //               onPressed: () {
+      //                 context.push(profileParams);
+      //               },
+      //             ),
+      //           ],
+      //         ),
+      //       ),
+      //   ],
+      //   backgroundColor: Colors.white,
+      //   foregroundColor: Colors.black,
+      //   elevation: 0,
+      // ),
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           "Profile",
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
         ),
-        actions: [
-          if (widget.isCurrentUser)
-            Positioned(
-              right: 0,
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => context.goNamed("statistic-creator"),
-                    icon: const Icon(Icons.timeline),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      if (_user != null) {
-                        context.push('/profile/edit');
-                      }
-                    },
-                    icon: const Icon(Icons.edit),
-                  ),
-                  IconButton(
-                    onPressed: () => context.goNamed("messages"),
-                    icon: const Icon(Icons.mail_outline),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.settings),
-                    onPressed: () {
-                      context.push(profileParams);
-                    },
-                  ),
-                ],
-              ),
-            ),
-        ],
+        actions: widget.isCurrentUser
+            ? [
+          IconButton(
+            onPressed: () => context.goNamed("statistic-creator"),
+            icon: const Icon(Icons.timeline),
+          ),
+          IconButton(
+            onPressed: () {
+              if (_user != null) {
+                context.push('/profile/edit');
+              }
+            },
+            icon: const Icon(Icons.edit),
+          ),
+          IconButton(
+            onPressed: () => context.goNamed("messages"),
+            icon: const Icon(Icons.mail_outline),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              context.push(profileParams);
+            },
+          ),
+        ]
+            : [],
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
