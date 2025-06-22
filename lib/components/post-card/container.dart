@@ -192,14 +192,24 @@ class _PostCardState extends State<PostCard> {
                         padding: EdgeInsets.only(
                           bottom: MediaQuery.of(context).viewInsets.bottom,
                         ),
-                        child: ReportBottomSheet(postId: widget.post.id),
+                        child: ReportBottomSheet(
+                          postId: widget.post.id,
+                          onPostReported: (postId) {
+                            if (widget.onPostUpdated != null) {
+                              widget.onPostUpdated!(postId);
+                            } else {
+                              print('PostCard: ERREUR - callback onPostUpdated est null');
+                            }
+                          },
+                        ),
                       ),
                     );
                   },
                 ),
               ],
             ),
-          ),          GestureDetector(
+          ),          
+          GestureDetector(
             onTap: () {
               // Naviguer vers la vue en plein écran en différant la déconnexion
               // pour éviter les problèmes de notifications pendant le build
@@ -490,7 +500,16 @@ class _PostCardContainerState extends State<PostCardContainer> {
                         padding: EdgeInsets.only(
                           bottom: MediaQuery.of(context).viewInsets.bottom,
                         ),
-                        child: ReportBottomSheet(postId: widget.post.id),
+                        child: ReportBottomSheet(
+                          postId: widget.post.id,
+                          onPostReported: (postId) {
+                            if (widget.onPostUpdated != null) {
+                              widget.onPostUpdated!(postId);
+                            } else {
+                              print('PostCard: ERREUR - callback onPostUpdated est null');
+                            }
+                          },
+                        ),
                       ),
                     );
                   },

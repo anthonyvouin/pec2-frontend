@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:firstflutterapp/components/comments/comments_modal.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firstflutterapp/services/user_preferences_helper.dart';
+import 'package:firstflutterapp/components/post-card/report_bottom_sheet.dart';
 
 class PostFullscreenView extends StatefulWidget {
   final String initialPostId;
@@ -170,6 +171,50 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
           },
         );
       },
+    );
+  }
+
+  void _openReportModal(Post post) {
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, 
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: ReportBottomSheet(
+          postId: post.id,
+          onPostReported: (postId) {
+            setState(() {
+              final currentIndex = _currentIndex;
+              
+              // Supprimer le post de la liste
+              _posts.removeWhere((p) => p.id == postId);
+              
+              // Si c'était le dernier post ou si la liste est vide, fermer la vue
+              if (_posts.isEmpty) {
+                Navigator.of(context).pop();
+                return;
+              }
+              
+              if (_currentIndex >= _posts.length) {
+                _currentIndex = _posts.length - 1;
+              }
+              
+              if (currentIndex != _currentIndex && _pageController.hasClients) {
+                _pageController.animateToPage(
+                  _currentIndex,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              }
+            });
+          },
+        ),
+      ),
     );
   }
 
@@ -429,11 +474,21 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
                           return Text(
                             commentCount.toString(),
                             style: const TextStyle(color: Colors.white),
-                          );
+                          );                        
                         },
                       ),
                     ],
-                    // Suppression du coeur en bas à droite (bouton de sauvegarde)
+                    const Spacer(),
+                    // Bouton de signalement
+                    IconButton(
+                      icon: const Icon(
+                        Icons.report_outlined,
+                        color: Colors.white,
+                      ),
+                      onPressed: () => _openReportModal(post),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
                   ],
                 ),
               ],

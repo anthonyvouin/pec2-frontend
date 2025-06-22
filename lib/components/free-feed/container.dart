@@ -60,7 +60,7 @@ class _FreeFeedState extends State<FreeFeed> {
         10,
         widget.isFree,
         widget.userId,
-        false,
+        widget.homeFeed,
       );
       setState(() {
         _posts = paginatedResponse.data;
@@ -80,6 +80,19 @@ class _FreeFeedState extends State<FreeFeed> {
     }
   }
 
+  void _handlePostUpdate(String postId) {
+    final sseProvider = Provider.of<SSEProvider>(context, listen: false);
+    final isReported = sseProvider.isPostReported(postId);
+    
+    if (isReported) {
+      setState(() {
+        final previousLength = _posts.length;
+        _posts.removeWhere((post) => post.id == postId);
+        final newLength = _posts.length;
+      });
+    }
+  }
+
   Widget _buildForYouSection() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -94,34 +107,6 @@ class _FreeFeedState extends State<FreeFeed> {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
         const SizedBox(height: 24),
-        // GridView.builder(
-        //   shrinkWrap: true,
-        //   physics: const NeverScrollableScrollPhysics(),
-        //   itemCount: _posts.length,
-        //   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        //     maxCrossAxisExtent: 600,
-        //     childAspectRatio: 2 / 3,
-        //     crossAxisSpacing: 8,
-        //     mainAxisSpacing: 8,
-        //   ),
-        //   itemBuilder: (context, index) {
-        //     final post = _posts[index];
-        //     return Consumer<SSEProvider>(
-        //       builder: (context, sseProvider, _) {
-        //         final isConnected = sseProvider.isConnected(post.id);
-        //         return ConstrainedBox(
-        //           constraints: const BoxConstraints(
-        //             maxHeight: 500, // ✅ Hauteur minimale ici
-        //           ),
-        //           child: PostCard(
-        //             post: post,
-        //             isSSEConnected: isConnected,
-        //           ),
-        //         );
-        //       },
-        //     );
-        //   },
-        // ),
         Column(
           children: [
             Wrap(
@@ -142,6 +127,7 @@ class _FreeFeedState extends State<FreeFeed> {
                           child: PostCard(
                             post: post,
                             isSSEConnected: isConnected,
+                            onPostUpdated: _handlePostUpdate,
                           ),
                         );
                       },
@@ -150,33 +136,38 @@ class _FreeFeedState extends State<FreeFeed> {
             ),
           ],
         ),
-
-        // ListView.builder(
-        //   physics: const NeverScrollableScrollPhysics(),
-        //   shrinkWrap: true,
-        //   itemCount: _posts.length,
-        //   itemBuilder: (_, index) {
-        //     final post = _posts[index];
-        //     return Consumer<SSEProvider>(
-        //       builder: (context, sseProvider, _) {
-        //         final isConnected = sseProvider.isConnected(post.id);
-        //         return PostCard(
-        //           post: post,
-        //           isSSEConnected: isConnected,
-        //         );
-        //       },
-        //     );
-        //   },
-        // ),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Provider<List<Post>>.value(
-      value: _posts,
-      child: _buildForYouSection(),
+    return Consumer<SSEProvider>(
+      builder: (context, sseProvider, child) {
+        print('FreeFeed: rebuild avec ${_posts.length} posts');
+        
+        final postsToRemove = _posts.where((post) => 
+          sseProvider.isPostReported(post.id)).toList();
+        
+        if (postsToRemove.isNotEmpty) {
+          print('FreeFeed: posts à supprimer détectés: ${postsToRemove.length}');
+          Future.microtask(() {
+            if (mounted) {
+              setState(() {
+                for (final post in postsToRemove) {
+                  _posts.removeWhere((p) => p.id == post.id);
+                  print('FreeFeed: post ${post.id} supprimé de la liste');
+                }
+              });
+            }
+          });
+        }
+        
+        return Provider<List<Post>>.value(
+          value: _posts,
+          child: _buildForYouSection(),
+        );
+      },
     );
   }
 }

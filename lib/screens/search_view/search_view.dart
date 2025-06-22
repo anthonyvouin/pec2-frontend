@@ -5,6 +5,7 @@ import 'package:firstflutterapp/services/api_service.dart';
 import 'package:firstflutterapp/notifiers/sse_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firstflutterapp/utils/post_navigator.dart';
 
 class SearchView extends StatefulWidget {
   const SearchView({super.key});
@@ -84,45 +85,30 @@ class _SearchViewState extends State<SearchView> {
       _isLoading = true;
     });
 
-    try {
+    try {      
       final ApiService apiService = ApiService();
-      // Directly use queryParams parameter of the request method
-      final Map<String, String> queryParams = {};
+      final Map<String, String> queryParams = {
+        'isFree': 'true',
+      };
       if (categoryId != null && categoryId.isNotEmpty) {
-        queryParams['categories'] =
-            categoryId; // Modifié de 'category' à 'categories' pour correspondre au backend
-        print('Adding category filter: $categoryId');
+        queryParams['categories'] = categoryId;
       }
       if (searchQuery != null && searchQuery.isNotEmpty) {
         queryParams['search'] = searchQuery;
         print('Adding search query: $searchQuery');
       }
-
-      // Log the complete URL for debugging
       final String baseUrl = apiService.baseUrl;
       final Uri uri = Uri.parse(
         '$baseUrl/posts',
       ).replace(queryParameters: queryParams);
-      print('Full API URL: $uri');
-
-      print('Making API request to /posts with params: $queryParams');
+  
       final response = await apiService.request(
         method: 'GET',
         endpoint: '/posts',
         withAuth: true,
         queryParams: queryParams,
       );
-      print(
-        'API response received: ${response.success}, status code: ${response.statusCode}',
-      );
-      if (response.success) {
-        print('Response data type: ${response.data.runtimeType}');
-      } else {
-        print('API request failed with error: ${response.error}');
-      }
-
       if (!response.success) {
-        // Handle failed response but don't throw
         print('API request failed: ${response.error}');
         setState(() {
           _posts = [];
@@ -298,19 +284,38 @@ class _SearchViewState extends State<SearchView> {
     // Search with both filters
     _loadPosts(categoryId: _selectedCategoryId, searchQuery: searchQuery);
   }
-
+  // Fonction pour naviguer vers le détail du post en plein écran
   void _navigateToPostDetail(Post post) {
-    print('Navigation vers le détail du post: ${post.id}');
+    // Utilisez le PostNavigator pour naviguer vers la vue en plein écran
+    PostNavigator.navigateToFullscreen(
+      context,
+      initialPostId: post.id,
+      allPosts: _posts,
+    );
+  }
 
-    // Nous ne connectons plus au SSE ici, mais uniquement quand la modal des commentaires est ouverte
-    if (mounted) {
-      final sseProvider = Provider.of<SSEProvider>(context, listen: false);
-
-      // Déconnecter toutes les anciennes connexions
-      sseProvider.disconnectAll();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Vérifier si des posts ont été reportés
+    final sseProvider = Provider.of<SSEProvider>(context, listen: false);
+    bool hasReportedPosts = false;
+    
+    // Vérifier tous les posts de la liste
+    for (final post in List.from(_posts)) {
+      if (sseProvider.isPostReported(post.id)) {
+        hasReportedPosts = true;
+        break;
+      }
     }
-
-    context.push('/post/${post.id}', extra: _posts);
+    
+    // Si des posts ont été reportés, filtrer la liste
+    if (hasReportedPosts) {
+      setState(() {
+        _posts.removeWhere((p) => sseProvider.isPostReported(p.id));
+      });
+    }
   }
 
   @override
@@ -427,6 +432,38 @@ class _SearchViewState extends State<SearchView> {
                         ),
               ),
 
+              const SizedBox(height: 16),
+              
+              // Titre explicite pour indiquer que seuls les posts gratuits sont affichés
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16.0),
+                child: Row(
+                  children: [
+                    Text(
+                      "Découvrir",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Chip(
+                      label: Text(
+                        "Gratuit",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      backgroundColor: Colors.green,
+                      padding: EdgeInsets.zero,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ],
+                ),
+              ),
+
               const SizedBox(height: 16), // Grille de posts
               Expanded(
                 child:
@@ -467,7 +504,6 @@ class _SearchViewState extends State<SearchView> {
       ),
     );
   }
-
   Widget _buildPostsGrid() {
     if (_posts.isEmpty) {
       return Center(
@@ -475,9 +511,9 @@ class _SearchViewState extends State<SearchView> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.image_not_supported, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            SizedBox(height: 16),            
             Text(
-              'Pas de posts pour le moment',
+              'Pas de posts gratuits pour le moment',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -489,7 +525,7 @@ class _SearchViewState extends State<SearchView> {
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
-                  'Essayez une autre catégorie',
+                  'Essayez une autre catégorie pour des contenus gratuits',
                   style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                 ),
               )
@@ -521,88 +557,127 @@ class _SearchViewState extends State<SearchView> {
       );
     }
 
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 2 / 3,
-        crossAxisSpacing: 1,
-        mainAxisSpacing: 1,
-      ),
-      itemCount: _posts.length,
-      itemBuilder: (context, index) {
-        final post = _posts[index];
-        return GestureDetector(
-          onTap: () => _navigateToPostDetail(post),
-          child: Card(
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(0),
-            ),
-            child: Stack(
-              fit: StackFit.expand,
+    return Consumer<SSEProvider>(
+      builder: (context, sseProvider, _) {
+        // Filtrer les posts reportés
+        final displayPosts = _posts.where((post) => 
+          !sseProvider.isPostReported(post.id)).toList();
+        
+        if (displayPosts.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Image du post
-                Image.network(post.pictureUrl, fit: BoxFit.cover),
-
-                // Superposition sombre pour lisibilité
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7),
-                        ],
-                      ),
-                    ),
+                Icon(Icons.image_not_supported, size: 64, color: Colors.grey),
+                SizedBox(height: 16),                Text(
+                  'Tous les posts gratuits ont été signalés',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade700,
                   ),
                 ),
-
-                // Informations du post
-                Positioned(
-                  bottom: 8,
-                  left: 8,
-                  right: 8,
-                  child: Text(
-                    post.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-
-                // Indicateur si le post est gratuit ou payant
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: post.isFree ? Colors.green : Colors.red,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      post.isFree ? 'Gratuit' : 'Payant',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _selectedCategoryId = null;
+                      _searchController.clear();
+                      _isLoading = true;
+                    });
+                    _loadPosts();
+                  },
+                  icon: Icon(Icons.refresh),
+                  label: Text('Rafraîchir'),
                 ),
               ],
             ),
+          );
+        }
+
+        return GridView.builder(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            childAspectRatio: 2 / 3,
+            crossAxisSpacing: 1,
+            mainAxisSpacing: 1,
           ),
+          itemCount: displayPosts.length,
+          itemBuilder: (context, index) {
+            final post = displayPosts[index];
+            return GestureDetector(
+              onTap: () => _navigateToPostDetail(post),
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(0),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Image du post
+                    Image.network(post.pictureUrl, fit: BoxFit.cover),
+
+                    // Superposition sombre pour lisibilité
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.7),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Informations du post
+                    Positioned(
+                      bottom: 8,
+                      left: 8,
+                      right: 8,
+                      child: Text(
+                        post.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: post.isFree ? Colors.green : Colors.red,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          post.isFree ? 'Gratuit' : 'Payant',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
