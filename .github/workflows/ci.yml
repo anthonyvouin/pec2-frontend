@@ -35,11 +35,11 @@ jobs:
       - name: Flutter doctor
         run: flutter doctor -v
       
-      # - name: Install Linux dependencies for Flutter web
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install -y curl git unzip xz-utils libglu1-mesa
-      #     sudo apt-get install -y clang cmake ninja-build pkg-config
+      - name: Install Linux dependencies for Flutter web
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl git unzip xz-utils libglu1-mesa
+          sudo apt-get install -y clang cmake ninja-build pkg-config
 
       - name: Check if branch is main
         id: check_branch
@@ -50,8 +50,8 @@ jobs:
             echo "is_main=false" >> $GITHUB_OUTPUT
           fi
       
-      # - name: Build Web
-      #   run: flutter build web --release
+      - name: Build Web
+        run: flutter build web --release
       
       - name: Upload web build artifacts
         if: steps.check_branch.outputs.is_main == 'true'
@@ -60,8 +60,8 @@ jobs:
           name: web-build
           path: build/web/
       
-      # - name: Build APK
-      #   run: flutter build apk --release
+      - name: Build APK
+        run: flutter build apk --release
       
       - name: Upload APK artifacts
         if: steps.check_branch.outputs.is_main == 'true'
