@@ -35,11 +35,12 @@ jobs:
       - name: Flutter doctor
         run: flutter doctor -v
       
-      - name: Install Linux dependencies for Flutter web
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y curl git unzip xz-utils libglu1-mesa
-          sudo apt-get install -y clang cmake ninja-build pkg-config
+      # - name: Install Linux dependencies for Flutter web
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y curl git unzip xz-utils libglu1-mesa
+      #     sudo apt-get install -y clang cmake ninja-build pkg-config
+
       - name: Check if branch is main
         id: check_branch
         run: |
