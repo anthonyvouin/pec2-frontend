@@ -49,8 +49,8 @@ jobs:
             echo "is_main=false" >> $GITHUB_OUTPUT
           fi
       
-      - name: Build Web
-        run: flutter build web --release
+      # - name: Build Web
+      #   run: flutter build web --release
       
       - name: Upload web build artifacts
         if: steps.check_branch.outputs.is_main == 'true'
@@ -59,8 +59,8 @@ jobs:
           name: web-build
           path: build/web/
       
-      - name: Build APK
-        run: flutter build apk --release
+      # - name: Build APK
+      #   run: flutter build apk --release
       
       - name: Upload APK artifacts
         if: steps.check_branch.outputs.is_main == 'true'
