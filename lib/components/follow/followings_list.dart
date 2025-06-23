@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class FollowingsList extends StatefulWidget {
-  final String userId;
-  const FollowingsList({Key? key, required this.userId}) : super(key: key);
+  final String searchUser;
+  const FollowingsList({Key? key, required this.searchUser}) : super(key: key);
   @override
   State<FollowingsList> createState() => _FollowingsListState();
 }
@@ -24,7 +24,7 @@ class _FollowingsListState extends State<FollowingsList> {
     try {
       final response = await ApiService().request(
         method: 'GET',
-        endpoint: '/users/followings',
+        endpoint: '/users/followings?userSearch=${widget.searchUser}',
         withAuth: true,
       );
       setState(() {

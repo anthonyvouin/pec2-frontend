@@ -25,7 +25,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     adminContacts,
     adminContentCreator,
     adminCategoriesManagement,
-
+    adminRevenueChart,
+    adminPostsChart,
   ];
 
   Future<void> _logout() async {
