@@ -1,0 +1,43 @@
+name: Diagnostic Workflow
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types:
+      - completed
+  # Ajout d'un déclencheur manuel pour faciliter les tests
+  workflow_dispatch:
+
+jobs:
+  debug:
+    # Exécuter ce job même si le workflow CI a échoué
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Debug workflow_run event
+      run: |
+        echo "Workflow name: ${{ github.event.workflow_run.name }}"
+        echo "Workflow conclusion: ${{ github.event.workflow_run.conclusion }}"
+        echo "Workflow head branch: ${{ github.event.workflow_run.head_branch }}"
+        echo "Workflow head sha: ${{ github.event.workflow_run.head_sha }}"
+        echo "Current branch: ${{ github.ref }}"
+        echo "Current repository: ${{ github.repository }}"
+        
+    - name: Check if Docker workflow should run
+      run: |
+        if [ "${{ github.event.workflow_run.conclusion }}" == "success" ] && [ "${{ github.event.workflow_run.head_branch }}" == "main" ]; then
+          echo "Docker workflow should run"
+        else
+          echo "Docker workflow should NOT run"
+          echo "Reason: Either conclusion is not success or head_branch is not main"
+          echo "Conclusion: ${{ github.event.workflow_run.conclusion }}"
+          echo "Head branch: ${{ github.event.workflow_run.head_branch }}"
+        fi
+        
+    - name: Output entire github context
+      run: |
+        echo "GITHUB_REF: $GITHUB_REF"
+        echo "GITHUB_SHA: $GITHUB_SHA"
+        echo "GITHUB_HEAD_REF: $GITHUB_HEAD_REF"
+        echo "GITHUB_BASE_REF: $GITHUB_BASE_REF"
