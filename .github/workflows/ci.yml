@@ -40,11 +40,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y curl git unzip xz-utils libglu1-mesa
           sudo apt-get install -y clang cmake ninja-build pkg-config
+      - name: Check if branch is main
+        id: check_branch
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "is_main=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_main=false" >> $GITHUB_OUTPUT
+          fi
       
       - name: Build Web
         run: flutter build web --release
       
       - name: Upload web build artifacts
+        if: steps.check_branch.outputs.is_main == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: web-build
@@ -54,6 +63,7 @@ jobs:
         run: flutter build apk --release
       
       - name: Upload APK artifacts
+        if: steps.check_branch.outputs.is_main == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: apk-build
