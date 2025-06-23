@@ -5,6 +5,8 @@ on:
     workflows: [Docker]
     types:
       - completed
+    branches:
+      - main
   workflow_dispatch:
 
 env:
