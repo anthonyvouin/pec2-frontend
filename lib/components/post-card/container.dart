@@ -486,7 +486,7 @@ class _PostCardContainerState extends State<PostCardContainer> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        context.push('/profile/${widget.post.user.userName}'); // Navigate to user profile
+                        context.go('/profile/${widget.post.user.userName}');
                       },
                       child: Text(
                         widget.post.user.userName,

@@ -69,6 +69,14 @@ class _LoginViewState extends State<LoginView> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
         userNotifier.onAuthenticationSuccess(response.data);
+        if(response.data['following'] != null){
+          final ids =
+          (response.data['following'] as List)
+              .map((u) => u.toString())
+              .where((id) => id.isNotEmpty)
+              .toList();
+          userNotifier.setFollowedUserIds(ids);
+        }
 
         if (!mounted) return;
 

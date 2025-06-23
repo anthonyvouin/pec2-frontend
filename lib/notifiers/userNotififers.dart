@@ -13,6 +13,7 @@ class UserNotifier extends ChangeNotifier {
 
   // Ajout de la gestion des followings
   List<String> _followedUserIds = [];
+
   List<String> get followedUserIds => _followedUserIds;
 
   void setFollowedUserIds(List<String> ids) {
@@ -52,13 +53,24 @@ class UserNotifier extends ChangeNotifier {
       return false;
     }
 
-    if(user == null && tokenSaved != null){
-     var request = await _apiService.request(method: 'GET', endpoint: '/users/profile');
+    if (user == null && tokenSaved != null) {
+      var request = await _apiService.request(
+          method: 'GET', endpoint: '/users/profile');
 
-     if(request != null && request.data != null){
-       user = User.fromJson(request.data);
-       token = tokenSaved;
-     }
+
+      if (request != null && request.data != null) {
+        user = User.fromJson(request.data);
+        token = tokenSaved;
+        ApiResponse requestFollowing = await _apiService.request(
+            method: 'GET', endpoint: '/users/followings');
+        if (requestFollowing.success && requestFollowing.data != null){
+          final ids = (requestFollowing.data as List)
+              .map((u) => u['id']?.toString() ?? "")
+              .where((id) => id.isNotEmpty)
+              .toList();
+            setFollowedUserIds(ids);
+        }
+      }
     }
 
 
@@ -66,13 +78,13 @@ class UserNotifier extends ChangeNotifier {
   }
 
   Future<bool> isAdmin() async {
-      final prefs = await SharedPreferences.getInstance();
-      final tokenSaved = prefs.getString('auth_token');
+    final prefs = await SharedPreferences.getInstance();
+    final tokenSaved = prefs.getString('auth_token');
 
-      if (tokenSaved == null) {
-        developer.log('Token non trouvé, impossible de vérifier le rôle admin');
-        return false;
-      }
+    if (tokenSaved == null) {
+      developer.log('Token non trouvé, impossible de vérifier le rôle admin');
+      return false;
+    }
     try {
       // Décode le token pour accéder aux claims
       final Map<String, dynamic> decodedToken = JwtDecoder.decode(tokenSaved);
@@ -81,15 +93,18 @@ class UserNotifier extends ChangeNotifier {
       // Vérification exhaustive du rôle admin dans différents formats possibles
       if (decodedToken.containsKey('role')) {
         developer.log('Vérification du champ "role": ${decodedToken['role']}');
-        if (decodedToken['role'] == 'admin' || decodedToken['role'] == 'ADMIN') {
+        if (decodedToken['role'] == 'admin' ||
+            decodedToken['role'] == 'ADMIN') {
           return true;
         }
       }
 
       if (decodedToken.containsKey('roles')) {
-        developer.log('Vérification du champ "roles": ${decodedToken['roles']}');
+        developer.log(
+            'Vérification du champ "roles": ${decodedToken['roles']}');
         var roles = decodedToken['roles'];
-        if (roles is List && (roles.contains('admin') || roles.contains('ADMIN'))) {
+        if (roles is List &&
+            (roles.contains('admin') || roles.contains('ADMIN'))) {
           return true;
         } else if (roles is String && (roles == 'admin' || roles == 'ADMIN')) {
           return true;

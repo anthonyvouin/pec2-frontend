@@ -110,8 +110,8 @@ class _FreeFeedState extends State<FreeFeed> {
         Column(
           children: [
             Wrap(
-              spacing: 8, // espace horizontal entre les cartes
-              runSpacing: 8, // espace vertical entre les lignes
+              spacing: 8,
+              runSpacing: 8,
               children:
                   _posts.map((post) {
                     return Consumer<SSEProvider>(
