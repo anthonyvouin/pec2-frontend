@@ -403,8 +403,7 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-
+                const SizedBox(height: 8),                
                 // Titre et description
                 Text(
                   post.name,
@@ -414,6 +413,19 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
                     fontSize: 16,
                   ),
                 ),
+                if (post.description.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      post.description,
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 4),
 
                 Row(

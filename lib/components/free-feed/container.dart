@@ -143,20 +143,16 @@ class _FreeFeedState extends State<FreeFeed> {
   @override
   Widget build(BuildContext context) {
     return Consumer<SSEProvider>(
-      builder: (context, sseProvider, child) {
-        print('FreeFeed: rebuild avec ${_posts.length} posts');
-        
+      builder: (context, sseProvider, child) {        
         final postsToRemove = _posts.where((post) => 
           sseProvider.isPostReported(post.id)).toList();
         
         if (postsToRemove.isNotEmpty) {
-          print('FreeFeed: posts à supprimer détectés: ${postsToRemove.length}');
           Future.microtask(() {
             if (mounted) {
               setState(() {
                 for (final post in postsToRemove) {
                   _posts.removeWhere((p) => p.id == post.id);
-                  print('FreeFeed: post ${post.id} supprimé de la liste');
                 }
               });
             }

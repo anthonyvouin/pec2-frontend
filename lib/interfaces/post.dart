@@ -5,6 +5,7 @@ import 'package:firstflutterapp/interfaces/user.dart';
 class Post {
   final String id;
   final String name;
+  final String description;
   final String pictureUrl;
   final bool isFree;
   final bool enable;
@@ -22,6 +23,7 @@ class Post {
   Post({
     required this.id,
     required this.name,
+    this.description = '',
     required this.pictureUrl,
     required this.user,
     this.isFree = false,
@@ -36,11 +38,11 @@ class Post {
     this.reportsCount = 0,
     this.commentEnabled = true, // Valeur par défaut à true
   });
-  
-  factory Post.fromJson(Map<String, dynamic> json) {
+    factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
       id: json['id'],
       name: json['name'],
+      description: json['description'] ?? '',
       pictureUrl: json['pictureUrl'],
       isFree: json['isFree'] ?? false,
       enable: json['enable'] ?? true,
@@ -64,11 +66,11 @@ class Post {
       commentEnabled: json['commentEnabled'] ?? true, // Récupération depuis le JSON
     );
   }
-  
-  Map<String, dynamic> toJson() {
+    Map<String, dynamic> toJson() {
     return {
       'id': id,
       'name': name,
+      'description': description,
       'pictureUrl': pictureUrl,
       'isFree': isFree,
       'enable': enable,

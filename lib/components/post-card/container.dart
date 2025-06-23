@@ -139,15 +139,14 @@ class _PostCardState extends State<PostCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12), // Réduit de 16 à 12 pour éviter le dépassement
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with username and timestamp
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.only(left: 4, right: 4, top: 0, bottom: 12),
             child: Row(
               children: [                
                 CircleAvatar(
@@ -181,7 +180,8 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ],
                 ),
-                const Spacer(),                IconButton(
+                const Spacer(),                
+                IconButton(
                   icon: const Icon(Icons.report_outlined),
                   onPressed: () {
                     showModalBottomSheet(
@@ -209,6 +209,7 @@ class _PostCardState extends State<PostCard> {
               ],
             ),
           ),          
+          
           GestureDetector(
             onTap: () {
               // Naviguer vers la vue en plein écran en différant la déconnexion
@@ -237,7 +238,7 @@ class _PostCardState extends State<PostCard> {
               });
             },
             child: Container(
-              constraints: const BoxConstraints(maxHeight: 400, minHeight: 400),
+              constraints: const BoxConstraints(maxHeight: 380, minHeight: 380),
               width: double.infinity,
               child: Image(
                 image: widget.post.pictureUrl.isEmpty
@@ -265,23 +266,36 @@ class _PostCardState extends State<PostCard> {
           // Post caption
           if (widget.post.name.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.only(left: 4, right: 4, top: 12, bottom: 0),
               child: Text(widget.post.name, style: const TextStyle(fontSize: 15)),
+            ),
+          
+          // Post description
+          if (widget.post.description.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 4, right: 4, top: 8, bottom: 8),
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 60),
+                child: SingleChildScrollView(
+                  child: Text(
+                    widget.post.description,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ),
+              ),
             ),
 
           // Like and comment actions
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.only(left: 0, right: 4, top: 4, bottom: 4),
             child: Row(
-              children: [                IconButton(
+              children: [                
+                IconButton(
                   icon: _isLikeInProgress 
                       ? Icon(Icons.favorite, color: Colors.red.withOpacity(0.5))
                       : Icon(Icons.favorite, color: Colors.red),
                   onPressed: () {
                     toggleLike(widget.post.id).then((_) {
-                      debugPrint('Post liked: ${widget.post.id}');
-                      debugPrint('Post likes count: ${_likesCount}');
-                      
                       // We need to notify parent to update posts list
                       if (widget.onPostUpdated != null) {
                         widget.onPostUpdated!(widget.post.id);
@@ -357,7 +371,9 @@ class _PostCardContainerState extends State<PostCardContainer> {
     } else {
       return 'À l\'instant';
     }
-  }    void _openCommentsModal(BuildContext context) {
+  }    
+  
+  void _openCommentsModal(BuildContext context) {
     // Vérifier si les commentaires sont activés pour le post
     if (!widget.post.commentEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -447,7 +463,7 @@ class _PostCardContainerState extends State<PostCardContainer> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12), // Réduit de 16 à 12 pour éviter le dépassement
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
@@ -544,7 +560,7 @@ class _PostCardContainerState extends State<PostCardContainer> {
               });
             },
             child: Container(
-              constraints: const BoxConstraints(maxHeight: 400, minHeight: 400),
+              constraints: const BoxConstraints(maxHeight: 380, minHeight: 380), // Réduit de 400 à 380 pour réduire le dépassement
               width: double.infinity,
               child: Image(
                 image: widget.post.pictureUrl.isEmpty
@@ -575,10 +591,25 @@ class _PostCardContainerState extends State<PostCardContainer> {
               padding: const EdgeInsets.all(12),
               child: Text(widget.post.name, style: const TextStyle(fontSize: 15)),
             ),
+          
+          // Post description
+          if (widget.post.description.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 60), // Limite la hauteur de la description
+                child: SingleChildScrollView(
+                  child: Text(
+                    widget.post.description,
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
+                ),
+              ),
+            ),
 
           // Like and comment actions
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.only(left: 8, right: 8, top: 4, bottom: 4), // Ajout d'un padding vertical réduit
             child: Row(
               children: [                IconButton(
                   icon: _isLikeInProgress 
