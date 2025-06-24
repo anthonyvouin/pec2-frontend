@@ -42,8 +42,9 @@ class CategoryUpdate {
     developer.log('_updateCategory appelé - categoryId: $categoryId, name: $name, image fournie: ${imageBytes != null}');
     
     try {
+      final fields = {'name': name};
+      
       if (imageBytes != null && mimeType != null) {
-        final fields = {'name': name};
         final file = http.MultipartFile.fromBytes(
           'picture',
           imageBytes,
@@ -62,11 +63,20 @@ class CategoryUpdate {
 
         _handleResponse(response);
       } else {
-        developer.log('Envoi d\'une requête sans image');
-        final response = await ApiService().request(
-          method: 'PUT',
+        developer.log('Envoi d\'une requête sans image mais en utilisant FormData');
+        
+        final emptyBytes = Uint8List(0);
+        final dummyFile = http.MultipartFile.fromBytes(
+          'dummy_file',
+          emptyBytes,
+          filename: 'dummy.txt',
+        );
+        
+        final response = await ApiService().uploadMultipart(
           endpoint: '/categories/$categoryId',
-          body: {'name': name},
+          method: 'PUT',
+          fields: fields,
+          file: dummyFile,
           withAuth: true,
         );
 
