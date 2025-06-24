@@ -11,6 +11,8 @@ class SSEProvider extends ChangeNotifier {
   final Map<String, List<Comment>> _commentsByPostId = {};
   // Map qui stocke le nombre de commentaires par postId
   final Map<String, int> _commentsCountByPostId = {};
+  // Map qui stocke les IDs des posts reportés localement
+  final Set<String> _reportedPostIds = {};
 
   // Getter pour vérifier si un post a une connexion SSE active
   bool isConnected(String postId) {
@@ -25,8 +27,28 @@ class SSEProvider extends ChangeNotifier {
   int getCommentsCount(String postId) {
     return _commentsCountByPostId[postId] ?? 0;
   }
+
+  // Vérifier si un post a été reporté localement
+  bool isPostReported(String postId) {
+    final result = _reportedPostIds.contains(postId);
+    return result;
+  }
+
+  // Marquer un post comme reporté localement
+  void removePostLocally(String postId) {
+    _reportedPostIds.add(postId);
+
+    // Déconnecter le SSE pour ce post si actif
+    disconnect(postId);
+    notifyListeners();
+    
+  }
+  
   // Initialise une connexion SSE pour un post spécifique
   void connectToSSE(String postId) {
+    if (_reportedPostIds.contains(postId)) {
+      return;
+    }
     
     // Si on a déjà une connexion pour ce post, on ne fait rien
     if (_sseServices.containsKey(postId)) {

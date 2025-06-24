@@ -36,6 +36,15 @@ class _CommentsModalState extends State<CommentsModal> {
   }
 
   Future<void> _loadComments() async {
+    // Si les commentaires sont désactivés, ne pas charger les commentaires
+    if (!widget.post.commentEnabled) {
+      setState(() {
+        _comments = [];
+        _isLoading = false;
+      });
+      return;
+    }
+    
     final ApiService apiService = ApiService();
 
     final response = await apiService.request(
@@ -63,6 +72,17 @@ class _CommentsModalState extends State<CommentsModal> {
   }
   
   void _sendComment() async {
+    // Vérifier si les commentaires sont activés pour ce post
+    if (!widget.post.commentEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Les commentaires sont désactivés pour ce post'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    
     if (_commentController.text.trim().isEmpty) {
       return;
     }
@@ -262,67 +282,70 @@ class _CommentsModalState extends State<CommentsModal> {
               },
             ),
           ),
-          // Champ de saisie pour commenter
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  offset: const Offset(0, -2),
-                  blurRadius: 5,
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                    ),
-                    child: TextField(
-                      controller: _commentController,
-                      decoration: InputDecoration(
-                        hintText: 'Ajoutez un commentaire...',
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        hintStyle: TextStyle(
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                        ),
+          // Pied de page avec formulaire de commentaire - affiché uniquement si les commentaires sont activés
+          Visibility(
+            visible: widget.post.commentEnabled,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    offset: const Offset(0, -2),
+                    blurRadius: 5,
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
                       ),
-                      maxLines: 1,
-                      textCapitalization: TextCapitalization.sentences,
+                      child: TextField(
+                        controller: _commentController,
+                        decoration: InputDecoration(
+                          hintText: 'Ajoutez un commentaire...',
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          hintStyle: TextStyle(
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          ),
+                        ),
+                        maxLines: 1,
+                        textCapitalization: TextCapitalization.sentences,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Consumer<SSEProvider>(
-                  builder: (context, sseProvider, _) {
-                    return ElevatedButton(
-                      onPressed: (widget.isConnected || sseProvider.isConnected(widget.post.id)) 
-                          ? () {
-                              if (_commentController.text.trim().isNotEmpty) {
-                                _sendComment();
+                  const SizedBox(width: 8),
+                  Consumer<SSEProvider>(
+                    builder: (context, sseProvider, _) {
+                      return ElevatedButton(
+                        onPressed: (widget.isConnected || sseProvider.isConnected(widget.post.id)) 
+                            ? () {
+                                if (_commentController.text.trim().isNotEmpty) {
+                                  _sendComment();
+                                }
                               }
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        shadowColor: Colors.transparent,
-                        padding: const EdgeInsets.all(16),
-                        backgroundColor: Theme.of(context).primaryColor,
-                      ),
-                      child: const Icon(Icons.send, color: Colors.white, size: 20),
-                    );
-                  }
-                ),
-              ],
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.all(16),
+                          backgroundColor: Theme.of(context).primaryColor,
+                        ),
+                        child: const Icon(Icons.send, color: Colors.white, size: 20),
+                      );
+                    }
+                  ),
+                ],
+              ),
             ),
           ),
         ],

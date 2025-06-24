@@ -434,10 +434,10 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                   await _fetchFollowingsAndSync();
                   _fetchFollowCounts();
                   _fetchOtherUserData();
-                },
-              ),
+                },              ),
               const SizedBox(width: 10),
-              if (_user?.role == "CONTENT_CREATOR" && !_subcriptionCanceled)
+              // Afficher le bouton d'abonnement uniquement si l'utilisateur accepte les abonnements
+              if (_user?.role == "CONTENT_CREATOR" && !_subcriptionCanceled && _user?.subscriptionEnabled == true)
                 ElevatedButton(
                   onPressed: () async {
                     if (!_isSubscriber && _stripeLink != null) {
@@ -468,6 +468,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             ],
           ),
           const SizedBox(height: 16),
+          if (_user?.messageEnabled == true && !widget.isCurrentUser)
           ElevatedButton.icon(
             onPressed: () {
               showDialog(
@@ -526,7 +527,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                                           ToastificationType.error,
                                         );
                                       }
-                                    },
+                                },
                             child:
                                 sending
                                     ? const SizedBox(

@@ -5,6 +5,8 @@ import 'package:firstflutterapp/notifiers/sse_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:firstflutterapp/components/comments/comments_modal.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firstflutterapp/services/user_preferences_helper.dart';
+import 'package:firstflutterapp/components/post-card/report_bottom_sheet.dart';
 
 class PostFullscreenView extends StatefulWidget {
   final String initialPostId;
@@ -27,6 +29,8 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
 
   // Variable pour stocker une référence au Provider
   late SSEProvider _sseProvider;
+  final UserPreferencesHelper _preferencesHelper = UserPreferencesHelper();
+  bool _areCommentsEnabled = true;
 
   @override
   void initState() {
@@ -43,6 +47,8 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
 
     // Initialiser le PageController à l'index du post initial
     _pageController = PageController(initialPage: _currentIndex);
+
+    _loadCommentsPreference();
   }
 
   @override
@@ -130,9 +136,19 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
       }
     }
   }
-
   void _openCommentsModal(Post post) {
     if (!mounted) return;
+
+    // Vérifier si les commentaires sont activés
+    if (!_areCommentsEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Les commentaires sont désactivés dans vos préférences'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
 
     // Utiliser la référence stockée au lieu d'accéder au Provider chaque fois
     _sseProvider.connectToSSE(post.id);
@@ -158,6 +174,50 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
     );
   }
 
+  void _openReportModal(Post post) {
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, 
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: ReportBottomSheet(
+          postId: post.id,
+          onPostReported: (postId) {
+            setState(() {
+              final currentIndex = _currentIndex;
+              
+              // Supprimer le post de la liste
+              _posts.removeWhere((p) => p.id == postId);
+              
+              // Si c'était le dernier post ou si la liste est vide, fermer la vue
+              if (_posts.isEmpty) {
+                Navigator.of(context).pop();
+                return;
+              }
+              
+              if (_currentIndex >= _posts.length) {
+                _currentIndex = _posts.length - 1;
+              }
+              
+              if (currentIndex != _currentIndex && _pageController.hasClients) {
+                _pageController.animateToPage(
+                  _currentIndex,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              }
+            });
+          },
+        ),
+      ),
+    );
+  }
+
   String _getFormattedDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
@@ -170,6 +230,20 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
       return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''}';
     } else {
       return 'À l\'instant';
+    }
+  }
+
+  Future<void> _loadCommentsPreference() async {
+    try {
+      final commentsEnabled = await _preferencesHelper.areCommentsEnabled();
+      if (mounted) {
+        setState(() {
+          _areCommentsEnabled = commentsEnabled;
+        });
+      }
+    } catch (e) {
+      // En cas d'erreur, on suppose que les commentaires sont activés
+      print('Erreur lors du chargement de la préférence commentaires: $e');
     }
   }
 
@@ -329,8 +403,7 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-
+                const SizedBox(height: 8),                
                 // Titre et description
                 Text(
                   post.name,
@@ -340,6 +413,19 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
                     fontSize: 16,
                   ),
                 ),
+                if (post.description.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      post.description,
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 4),
 
                 Row(
@@ -367,44 +453,54 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
                       onPressed: () => _toggleLike(post),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
+                    ),                    const SizedBox(width: 4),                    Text(
                       post.likesCount.toString(),
                       style: const TextStyle(color: Colors.white),
                     ),
-                    const SizedBox(width: 16),
+                    if (_areCommentsEnabled) ...[
+                      const SizedBox(width: 16),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.chat_bubble_outline,
+                          color: Colors.white,
+                        ),
+                        onPressed: () => _openCommentsModal(post),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 4),
+                      Consumer<SSEProvider>(
+                        builder: (context, sseProvider, _) {
+                          // Obtenir le nombre de commentaires avec une gestion plus défensive
+                          int commentCount;
+                          try {
+                            final sseCount = sseProvider.getCommentsCount(
+                              post.id,
+                            );
+                            commentCount =
+                                sseCount > 0 ? sseCount : post.commentsCount;
+                          } catch (e) {
+                            // En cas d'erreur, revenir au nombre de commentaires du post
+                            commentCount = post.commentsCount;
+                          }
+                          return Text(
+                            commentCount.toString(),
+                            style: const TextStyle(color: Colors.white),
+                          );                        
+                        },
+                      ),
+                    ],
+                    const Spacer(),
+                    // Bouton de signalement
                     IconButton(
                       icon: const Icon(
-                        Icons.chat_bubble_outline,
+                        Icons.report_outlined,
                         color: Colors.white,
                       ),
-                      onPressed: () => _openCommentsModal(post),
+                      onPressed: () => _openReportModal(post),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
-                    const SizedBox(width: 4),
-                    Consumer<SSEProvider>(
-                      builder: (context, sseProvider, _) {
-                        // Obtenir le nombre de commentaires avec une gestion plus défensive
-                        int commentCount;
-                        try {
-                          final sseCount = sseProvider.getCommentsCount(
-                            post.id,
-                          );
-                          commentCount =
-                              sseCount > 0 ? sseCount : post.commentsCount;
-                        } catch (e) {
-                          // En cas d'erreur, revenir au nombre de commentaires du post
-                          commentCount = post.commentsCount;
-                        }
-                        return Text(
-                          commentCount.toString(),
-                          style: const TextStyle(color: Colors.white),
-                        );
-                      },
-                    ),
-                    // Suppression du coeur en bas à droite (bouton de sauvegarde)
                   ],
                 ),
               ],

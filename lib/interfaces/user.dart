@@ -9,8 +9,10 @@ class User {
   DateTime? emailVerifiedAt;
   String firstName;
   String lastName;
-  DateTime birthDayDate;
-  String sexe;
+  DateTime birthDayDate;  String sexe;
+  bool commentEnabled;
+  bool messageEnabled;
+  bool subscriptionEnabled;
 
   User({
     required this.email,
@@ -23,8 +25,10 @@ class User {
     required this.birthDayDate,
     required this.sexe,
     this.stripeCustomerId,
-    this.emailVerifiedAt,
-    this.id
+    this.emailVerifiedAt,    this.id,
+    this.commentEnabled = true,
+    this.messageEnabled = true,
+    this.subscriptionEnabled = true,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -38,9 +42,29 @@ class User {
       stripeCustomerId: json['stripeCustomerId'],
       firstName: json['firstName'],
       lastName: json['lastName'],
-      birthDayDate: DateTime.parse(json["birthDayDate"]),
-      sexe: json['sexe'],
+      birthDayDate: DateTime.parse(json["birthDayDate"]),      sexe: json['sexe'],      commentEnabled: json['commentsEnable'] ?? true,
+      messageEnabled: json['messageEnable'] ?? true,
+      subscriptionEnabled: json['subscriptionEnable'] ?? true,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'email': email,
+      'userName': userName,
+      'role': role,
+      'bio': bio,
+      'profilePicture': profilePicture,
+      'stripeCustomerId': stripeCustomerId,
+      'firstName': firstName,
+      'lastName': lastName,
+      'birthDayDate': birthDayDate.toIso8601String(),
+      'sexe': sexe,
+      'commentsEnable': commentEnabled,
+      'messageEnable': messageEnabled,
+      'subscriptionEnable': subscriptionEnabled,
+    };
   }
 }
 

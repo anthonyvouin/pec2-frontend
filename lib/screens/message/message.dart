@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:firstflutterapp/services/api_service.dart';
 import 'package:firstflutterapp/components/message/conversation_item.dart';
 import 'package:firstflutterapp/components/message/conversation_list.dart';
-import 'package:firstflutterapp/components/message/conversation_detail.dart';
+import 'package:firstflutterapp/interfaces/user.dart';
+import 'package:firstflutterapp/components/message/disabled_message_input.dart';
+import 'package:firstflutterapp/components/message/message_bubble.dart';
+import 'package:firstflutterapp/components/message/message_input.dart';
 
 class MessagePage extends StatefulWidget {
   const MessagePage({Key? key}) : super(key: key);
@@ -115,17 +118,7 @@ class _MessagePageState extends State<MessagePage> {
     return result;
   }
 
-  void _openConversation(PrivateMessage message) {
-    final otherPersonId =
-        message.isCurrentUser ? message.receiverId : message.senderId;
-
-    final conversationMessages = _conversationMessages[otherPersonId] ?? [];
-    for (var msg in conversationMessages) {
-      if (!msg.isCurrentUser && msg.status == 'UNREAD') {
-        _markMessageAsRead(msg.id);
-      }
-    }
-
+  Future<void> _openConversation(PrivateMessage message) async {
     setState(() {
       _selectedConversation = message;
     });
@@ -135,40 +128,6 @@ class _MessagePageState extends State<MessagePage> {
     setState(() {
       _selectedConversation = null;
     });
-  }
-
-  Future<void> _markMessageAsRead(String messageId) async {
-    try {
-      final response = await _apiService.request(
-        method: 'PATCH',
-        endpoint: '/private-messages/$messageId/read',
-        withAuth: true,
-      );
-
-      if (response.success) {
-        setState(() {
-          for (var i = 0; i < _messages.length; i++) {
-            if (_messages[i].id == messageId) {
-              final updatedMessage = PrivateMessage(
-                id: _messages[i].id,
-                senderId: _messages[i].senderId,
-                receiverId: _messages[i].receiverId,
-                content: _messages[i].content,
-                status: 'READ',
-                createdAt: _messages[i].createdAt,
-                senderName: _messages[i].senderName,
-                receiverName: _messages[i].receiverName,
-                isCurrentUser: _messages[i].isCurrentUser,
-              );
-              _messages[i] = updatedMessage;
-              break;
-            }
-          }
-        });
-      }
-    } catch (e) {
-      developer.log('Erreur lors du marquage du message comme lu: $e');
-    }
   }
 
   Future<void> _sendMessage(String receiverName) async {
@@ -191,7 +150,7 @@ class _MessagePageState extends State<MessagePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Erreur: ${response.error ?? "Impossible d'envoyer le message"}',
+              'Erreur: ${response.error ?? "Impossible d\'envoyer le message"}',
             ),
             backgroundColor: Colors.red,
           ),
@@ -248,7 +207,7 @@ class _MessagePageState extends State<MessagePage> {
       ),
     );
   }
-
+  
   Widget _buildContent() {
     if (_selectedConversation == null) {
       return ConversationList(
@@ -266,12 +225,41 @@ class _MessagePageState extends State<MessagePage> {
           _selectedConversation!.isCurrentUser
               ? _selectedConversation!.receiverName
               : _selectedConversation!.senderName;
+              
+      // Détermine si l'autre personne a activé les messages
+      final bool messageEnabled = _selectedConversation!.isCurrentUser
+          ? _selectedConversation!.receiverMessageEnable
+          : _selectedConversation!.senderMessageEnable;
+          
+      developer.log('Building message UI with messageEnabled: $messageEnabled for user: $otherPersonId');
 
-      return ConversationDetail(
-        messages: messages,
-        messageController: _messageController,
-        onSendMessage: _sendMessage,
-        otherPersonName: otherPersonName,
+      return Column(
+        children: [
+          Expanded(
+            child: 
+                messages.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'Commencez à discuter',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(8.0),
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          return MessageBubble(message: messages[index]);
+                        },
+                      ),
+          ),
+          messageEnabled
+              ? MessageInput(
+                  controller: _messageController,
+                  onSend: _sendMessage,
+                  receiverName: otherPersonName,
+                )
+              : const DisabledMessageInput(),
+        ],
       );
     }
   }
