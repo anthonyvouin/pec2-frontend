@@ -135,7 +135,7 @@ final router = GoRouter(
         ),
         GoRoute(
           path: subFeedRoute,
-          builder: (context, state) => SubFeedView(),
+          builder: (context, state) => SubscriptionFeedView(),
           redirect: (context, state) {
             return isAuthenticated(context, state);
           },

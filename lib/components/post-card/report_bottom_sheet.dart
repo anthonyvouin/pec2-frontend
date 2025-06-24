@@ -2,11 +2,18 @@ import 'package:firstflutterapp/config/router.dart';
 import 'package:flutter/material.dart';
 import 'package:firstflutterapp/services/api_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:firstflutterapp/notifiers/sse_provider.dart';
 
 class ReportBottomSheet extends StatefulWidget {
   final String postId;
+  final Function(String)? onPostReported;
 
-  const ReportBottomSheet({Key? key, required this.postId}) : super(key: key);
+  const ReportBottomSheet({
+    Key? key, 
+    required this.postId,
+    this.onPostReported,
+  }) : super(key: key);
 
   @override
   State<ReportBottomSheet> createState() => _ReportBottomSheetState();
@@ -52,6 +59,15 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
       if (!mounted) return;
 
       if (response.success) {
+        if (widget.onPostReported != null) {
+          widget.onPostReported!(widget.postId);
+        } else {
+          print('ReportBottomSheet: ERREUR - callback onPostReported est null');
+        }
+        
+        final sseProvider = Provider.of<SSEProvider>(context, listen: false);
+        sseProvider.removePostLocally(widget.postId);
+        
         context.pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
