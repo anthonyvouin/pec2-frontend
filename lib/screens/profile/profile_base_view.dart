@@ -512,7 +512,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                 },              ),
               const SizedBox(width: 10),
               // Afficher le bouton d'abonnement uniquement si l'utilisateur accepte les abonnements
-              if (_user?.role == "CONTENT_CREATOR" && !_subcriptionCanceled && _user?.subscriptionEnabled != false)
+              if (_user?.role == "CONTENT_CREATOR" && !_subcriptionCanceled && _user?.subscriptionEnabled == true)
                 ElevatedButton(
                   onPressed: () async {
                     if (!_isSubscriber && _stripeLink != null) {
