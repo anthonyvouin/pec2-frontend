@@ -5,6 +5,7 @@ import 'package:firstflutterapp/screens/confirm-email/resend-email-confirmation.
 import 'package:firstflutterapp/screens/creator/creator-view.dart';
 import 'package:firstflutterapp/screens/creator/creator_statistics_view.dart';
 import 'package:firstflutterapp/screens/home/home_view.dart';
+import 'package:firstflutterapp/screens/post-creation/post-details.dart';
 import 'package:firstflutterapp/screens/post-creation/upload-photo.dart';
 import 'package:firstflutterapp/screens/post_detail/post_fullscreen_view.dart';
 import 'package:firstflutterapp/screens/home/home-service.dart';
@@ -69,6 +70,7 @@ const adminCategoriesManagement = '/admin/categories-management';
 const resetPasswordRoute = '/reset-password';
 const confirmResetPasswordRoute = '/reset-password/confirm';
 const postDetailRoute = '/post/:id';
+const postEdit = '/post/edit/:id';
 
 Future<String?> hasAdminPermissions(
   BuildContext context,
@@ -150,11 +152,16 @@ final router = GoRouter(
         GoRoute(
           path: profileRoute,
           builder: (context, state) => ProfileView(),
+          name: 'profile',
           redirect: (context, state) {
             return isAuthenticated(context, state);
           },
           routes: [
-            GoRoute(path: 'edit', builder: (context, state) => UpdateProfile()),
+            GoRoute(
+              path: 'edit',
+              name: 'edit-profile',
+              builder: (context, state) => UpdateProfile(),
+            ),
             GoRoute(
               path: 'creator',
               name: 'profile-creator',
@@ -243,18 +250,32 @@ final router = GoRouter(
     GoRoute(
       path: confirmResetPasswordRoute,
       builder: (context, state) => ConfirmResetPasswordPage(),
-    ),    
+    ),
     GoRoute(
       path: postDetailRoute,
       builder: (context, state) {
         final postId = state.pathParameters['id'];
         final allPosts = state.extra as List<Post>?;
-        
+
         // On crée une page intermédiaire pour isoler le chargement du post et éviter les problèmes de build
-        return PostFullscreenView(
-            initialPostId: postId!,
-            allPosts: allPosts!,
-          );
+        return PostFullscreenView(initialPostId: postId!, allPosts: allPosts!);
+      },
+      redirect: (context, state) {
+        return isAuthenticated(context, state);
+      },
+    ),
+    GoRoute(
+      path: postEdit,
+      builder: (context, state) {
+        final extraData = state.extra as Map<String, dynamic>?;
+        return PostDetailsView(
+          name: extraData?['name'],
+          id: extraData?['id'],
+          categories: extraData?['categories'],
+          visibility: extraData?['visibility'],
+          imageUrl: extraData?['imageUrl'],
+          step: 'update',
+        );
       },
       redirect: (context, state) {
         return isAuthenticated(context, state);

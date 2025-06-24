@@ -22,18 +22,12 @@ class UpdateProfileService {
   }
 
   bool checkFormIsValid(
-    String pseudo,
-    String lastName,
-    String firstName,
     DateTime? birthDay,
     String? sexe,
   ) {
-    final bool validPseudo = _checkFormData.inputIsNotEmptyOrNull(pseudo);
-    final bool validFirstname = _checkFormData.inputIsNotEmptyOrNull(firstName);
-    final bool validLastName = _checkFormData.inputIsNotEmptyOrNull(lastName);
     final bool validBirthDay = _checkFormData.dateIsNotEmpty(birthDay);
     final bool validSexe = _checkFormData.inputIsNotEmptyOrNull(sexe);
-    return validPseudo && validFirstname && validLastName && validBirthDay && validSexe;
+    return validBirthDay && validSexe;
   }
 
   String getErrorMessage(int status){

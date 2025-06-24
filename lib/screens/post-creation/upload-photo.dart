@@ -1,10 +1,12 @@
 import 'dart:io' show File;
+import 'package:firstflutterapp/services/toast_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
 import 'package:firstflutterapp/screens/post-creation/post-details.dart';
 import 'package:firstflutterapp/screens/post-creation/post-creation-service.dart';
+import 'package:toastification/toastification.dart';
 
 class UploadPhotoView extends StatefulWidget {
   const UploadPhotoView({super.key});
@@ -185,13 +187,11 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PostDetailsView(imageFile: _xFile!),
+          builder: (context) => PostDetailsView(imageFile: _xFile!, step: 'create',),
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez prendre ou sélectionner une image')),
-      );
+      ToastService.showToast('Veuillez prendre ou sélectionner une image', ToastificationType.error);
     }
   }
 

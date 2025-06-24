@@ -68,6 +68,7 @@ class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
     if (request.success) {
       setState(() {
         _userStats = UserStats.fromJson(request.data);
+        print(_userStats);
       });
     }else{
       ToastService.showToast('Erreur lors de la récupération des données', ToastificationType.error);
@@ -103,9 +104,9 @@ class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
             _periodSelector(displayRange),
             const SizedBox(height: 16),
             !_isLoading
-                ? (_userStats != null
+                ? (_userStats != null && _userStats!.subscriberLength > 0
                 ? _firstLine()
-                : const Text("Aucune donnée"))
+                : const Text("Vous n'avez pas d'abonnés"))
                 : const Text("Chargement des données..."),
           ],
         ),

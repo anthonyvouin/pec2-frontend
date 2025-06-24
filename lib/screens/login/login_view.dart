@@ -130,7 +130,6 @@ class _LoginViewState extends State<LoginView> {
                     child: IntrinsicHeight(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        // ✅ Centrage vertical ici
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Image.asset(

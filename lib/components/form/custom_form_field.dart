@@ -9,6 +9,8 @@ class CustomTextField extends StatefulWidget {
     this.validators = const [],
     this.obscure = false,
     this.showText = false,
+    this.maxLine = 1,
+
     super.key,
   });
 
@@ -16,6 +18,7 @@ class CustomTextField extends StatefulWidget {
   final String label;
   final bool obscure;
   final bool showText;
+  final int maxLine;
   final List<Validator> validators;
 
   @override
@@ -44,6 +47,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
     return TextFormField(
       controller: widget.controller,
       obscureText: widget.obscure && !_showText,
+      maxLines: widget.maxLine,
       decoration: buildInputDecoration(
         colorScheme: colorScheme,
         label: widget.label,
