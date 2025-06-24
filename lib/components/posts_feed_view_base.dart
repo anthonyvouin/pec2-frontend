@@ -31,9 +31,9 @@ abstract class PostsFeedViewBase<T extends StatefulWidget> extends State<T> {
 
   String get viewTitle;
 
-  Color get badgeColor;
+  // Color get badgeColor;
 
-  String get badgeText;
+  // String get badgeText;
 
   String get emptyStateTitle;
 
@@ -193,8 +193,8 @@ abstract class PostsFeedViewBase<T extends StatefulWidget> extends State<T> {
       ),
       isLoading: isLoading,
       title: viewTitle,
-      badgeColor: badgeColor,
-      badgeText: badgeText,
+      // badgeColor: badgeColor,
+      // badgeText: badgeText,
       headerWidgets: getHeaderWidgets(),
     );
   }

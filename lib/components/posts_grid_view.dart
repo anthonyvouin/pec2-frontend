@@ -20,9 +20,9 @@ class PostsGridView extends StatelessWidget {
   
   final String title;
   
-  final Color badgeColor;
+  // final Color badgeColor;
   
-  final String badgeText;
+  // final String badgeText;
   
   final List<Widget> headerWidgets;
 
@@ -35,8 +35,8 @@ class PostsGridView extends StatelessWidget {
     required this.onRefresh,
     required this.isLoading,
     required this.title,
-    required this.badgeColor,
-    required this.badgeText,
+    // required this.badgeColor,
+    // required this.badgeText,
     this.headerWidgets = const [],
   });
 
@@ -46,8 +46,7 @@ class PostsGridView extends StatelessWidget {
       onRefresh: () => onRefresh(categoryId: selectedCategoryId),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
+        children: [          Padding(
             padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
             child: Row(
               children: [
@@ -58,20 +57,7 @@ class PostsGridView extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Chip(
-                  label: Text(
-                    badgeText,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  backgroundColor: badgeColor,
-                  padding: EdgeInsets.zero,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+                // Badge supprimé
               ],
             ),
           ),
@@ -201,9 +187,8 @@ class PostsGridView extends StatelessWidget {
                 Icon(Icons.image_not_supported, size: 64, color: Colors.grey),
                 const SizedBox(height: 16),
                 Text(
-                  selectedCategoryId != null
-                    ? 'Pas de posts ${badgeText.toLowerCase()} dans cette catégorie'
-                    : 'Tous vos posts ${badgeText.toLowerCase()} ont été signalés',
+                  selectedCategoryId != null                    ? 'Pas de posts dans cette catégorie'
+                    : 'Tous vos posts ont été signalés',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -215,7 +200,7 @@ class PostsGridView extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(
-                      'Essayez une autre catégorie pour des posts ${badgeText.toLowerCase()}',
+                      'Essayez une autre catégorie',
                       style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                     ),
                   ),
@@ -295,29 +280,10 @@ class PostsGridView extends StatelessWidget {
                             fontSize: 14,
                           ),
                         ),
-                      ),
-
-                      Positioned(
+                      ),                      Positioned(
                         top: 8,
                         right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: badgeColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            badgeText,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
+                        child: Container(),
                       ),
                     ],
                   ),

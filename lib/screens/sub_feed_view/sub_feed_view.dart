@@ -12,27 +12,26 @@ class SubscriptionFeedView extends StatefulWidget {
 
 class _SubscriptionFeedViewState extends PostsFeedViewBase<SubscriptionFeedView> {
   final SubscriptionFeedService _subscriptionFeedService = SubscriptionFeedService();
-
   @override
   String get viewTitle => 'Abonnements';
 
-  @override
-  Color get badgeColor => Colors.red;
+  // @override
+  // Color get badgeColor => Colors.transparent;
+
+  // @override
+  // String get badgeText => '';
 
   @override
-  String get badgeText => 'Payant';
+  String get emptyStateTitle => 'Aucun post d\'abonnement';
 
   @override
-  String get emptyStateTitle => 'Aucun post d\'abonnement payant';
+  String get emptyCategoryStateTitle => 'Aucun post dans cette catégorie';
 
   @override
-  String get emptyCategoryStateTitle => 'Aucun post payant dans cette catégorie';
+  String get emptyStateMessage => 'Abonnez-vous à des créateurs de contenu pour voir leurs posts ici.';
 
   @override
-  String get emptyStateMessage => 'Abonnez-vous à des créateurs de contenu pour voir leurs posts payants ici.';
-
-  @override
-  String get emptyCategoryStateMessage => 'Essayez une autre catégorie pour voir des posts payants';
+  String get emptyCategoryStateMessage => 'Essayez une autre catégorie';
 
   @override
   IconData get emptyStateIcon => Icons.subscriptions_outlined;
@@ -47,6 +46,7 @@ class _SubscriptionFeedViewState extends PostsFeedViewBase<SubscriptionFeedView>
     });
 
     try {
+      print('SubscriptionFeedView: Chargement des posts d\'abonnement...');
       final paginatedResponse = await _subscriptionFeedService.loadSubscriptionPosts(
         page: 1,
         limit: 10,
@@ -62,6 +62,15 @@ class _SubscriptionFeedViewState extends PostsFeedViewBase<SubscriptionFeedView>
       
       print('SubscriptionFeedView: ${posts.length} posts chargés');
       
+      // Afficher un message si aucun post n'a été trouvé
+      if (posts.isEmpty && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Aucun post payant trouvé parmi vos abonnements. Abonnez-vous à des créateurs pour voir leur contenu exclusif.'),
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
