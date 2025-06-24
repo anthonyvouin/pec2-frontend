@@ -17,6 +17,7 @@ import '../../services/validators_service.dart'; // Ajout de l'import XFile
 class PostDetailsView extends StatefulWidget {
   final XFile? imageFile; // Changé de File à XFile
   final String? name;
+  final String? description;
   final List<Category>? categories;
   final bool? visibility;
   final String? imageUrl;
@@ -27,6 +28,7 @@ class PostDetailsView extends StatefulWidget {
     Key? key,
     required this.step,
     this.imageFile,
+    this.description,
     this.name,
     this.categories,
     this.visibility,
@@ -40,7 +42,7 @@ class PostDetailsView extends StatefulWidget {
 
 class _PostDetailsViewState extends State<PostDetailsView> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _descriptionController = TextEditingController();
+  late final TextEditingController _descriptionController;
   late final TextEditingController _nameController;
   String? _imageUrl;
   List<Category> _categories = [];
@@ -55,9 +57,11 @@ class _PostDetailsViewState extends State<PostDetailsView> {
     super.initState();
     _loadCategories();
     _nameController = TextEditingController(text: widget.name ?? '');
+    _descriptionController = TextEditingController(text: widget.description ?? '');
     _isFree = widget.visibility ?? true;
     _selectedCategories = widget.categories ?? [];
     _imageUrl = widget.imageUrl;
+    print(widget.step);
   }
 
   @override
@@ -491,8 +495,8 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                                         child: LoadingButton(
                                           label:
                                               widget.step == 'create'
-                                                  ? 'Enregistrer'
-                                                  : 'Partager',
+                                                  ? 'Partager'
+                                                  : 'Enregistrer',
                                           isSubmitted: _isSubmitted,
                                           onPressed: _publishPost,
                                         ),

@@ -270,6 +270,7 @@ final router = GoRouter(
         final extraData = state.extra as Map<String, dynamic>?;
         return PostDetailsView(
           name: extraData?['name'],
+          description: extraData?['description'],
           id: extraData?['id'],
           categories: extraData?['categories'],
           visibility: extraData?['visibility'],

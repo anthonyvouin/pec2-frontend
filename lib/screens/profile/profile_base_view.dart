@@ -425,6 +425,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
       return Column(
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ButtonFollow(
                 key: ValueKey(widget.username ?? ''),

@@ -182,6 +182,7 @@ class _ProfileFeedState extends State<ProfileFeed> {
                                 'categories': post.categories,
                                 'visibility': post.isFree,
                                 'imageUrl': post.pictureUrl,
+                                'description': post.description,
                                 'id': post.id,
                               },
                             );
