@@ -59,7 +59,6 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
         withAuth: true,
       );
       
-      // Récupération des revenus des 7 derniers jours
       final DateTime now = DateTime.now();
       final DateTime sevenDaysAgo = now.subtract(const Duration(days: 7));
       
@@ -73,7 +72,6 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
         },
       );
       
-      // Récupération du top 3 des créateurs
       final topCreatorsResponse = await ApiService().request(
         method: 'GET',
         endpoint: '/subscriptions/top-creators',
@@ -84,10 +82,8 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
         setState(() {
           _roleStats = Map<String, int>.from(roleResponse.data);
           _genderStats = Map<String, int>.from(genderResponse.data);
-          // L'API retourne le montant en centimes, donc on divise par 100 pour avoir en euros
           _last7DaysRevenue = (revenueResponse.data['total'] as int) ~/ 100;
           
-          // Traitement du top 3 des créateurs
           if (topCreatorsResponse.success && topCreatorsResponse.data is List) {
             _topCreators = (topCreatorsResponse.data as List)
                 .map((item) => TopCreator.fromJson(item as Map<String, dynamic>))
@@ -117,7 +113,6 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Vérifier si l'écran est petit (mobile)
     final bool isSmallScreen = MediaQuery.of(context).size.width < 900;
 
     return SingleChildScrollView(

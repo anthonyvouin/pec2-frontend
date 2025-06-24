@@ -45,6 +45,7 @@ class CategoryUpdate {
       final fields = {'name': name};
       
       if (imageBytes != null && mimeType != null) {
+        // Cas avec une image
         final file = http.MultipartFile.fromBytes(
           'picture',
           imageBytes,
@@ -60,11 +61,13 @@ class CategoryUpdate {
           file: file,
           withAuth: true,
         );
-
+        
         _handleResponse(response);
       } else {
+        // Cas sans image - on utilise quand même uploadMultipart avec un fichier vide
         developer.log('Envoi d\'une requête sans image mais en utilisant FormData');
         
+        // Créer un fichier vide pour la compatibilité avec uploadMultipart
         final emptyBytes = Uint8List(0);
         final dummyFile = http.MultipartFile.fromBytes(
           'dummy_file',
