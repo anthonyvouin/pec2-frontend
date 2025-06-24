@@ -79,27 +79,51 @@ class _UsersManagementState extends State<UsersManagement> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isSmallScreen = MediaQuery.of(context).size.width < 900;
+
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Gestion des utilisateurs",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              ElevatedButton.icon(
-                onPressed: _fetchUsers,
-                icon: Icon(
-                  _loadingUsers ? Icons.hourglass_empty : Icons.refresh,
+          if (isSmallScreen)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Gestion des utilisateurs",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
-                label: Text(_loadingUsers ? "Chargement..." : "Actualiser"),
-              ),
-            ],
-          ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _fetchUsers,
+                    icon: Icon(
+                      _loadingUsers ? Icons.hourglass_empty : Icons.refresh,
+                    ),
+                    label: Text(_loadingUsers ? "Chargement..." : "Actualiser"),
+                  ),
+                ),
+              ],
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Gestion des utilisateurs",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _fetchUsers,
+                  icon: Icon(
+                    _loadingUsers ? Icons.hourglass_empty : Icons.refresh,
+                  ),
+                  label: Text(_loadingUsers ? "Chargement..." : "Actualiser"),
+                ),
+              ],
+            ),
           const SizedBox(height: 24),
           Expanded(
             child: _loadingUsers
@@ -167,20 +191,29 @@ class _UsersManagementState extends State<UsersManagement> {
                                 user['email'] as String? ??
                                     'Email non disponible',
                               ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _buildRoleBadge(user['role'] as String?),
-                                  const SizedBox(width: 8),
-                                  const Icon(Icons.chevron_right),
-                                ],
-                              ),
+                              trailing: isSmallScreen
+                                  ? const Icon(Icons.chevron_right)
+                                  : Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        _buildRoleBadge(user['role'] as String?),
+                                        const SizedBox(width: 8),
+                                        const Icon(Icons.chevron_right),
+                                      ],
+                                    ),
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: _buildUserDetailsList(user),
+                                    children: [
+                                      if (isSmallScreen)
+                                        Padding(
+                                          padding: const EdgeInsets.only(bottom: 16.0),
+                                          child: _buildRoleBadge(user['role'] as String?),
+                                        ),
+                                      ..._buildUserDetailsList(user, isSmallScreen),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -194,17 +227,17 @@ class _UsersManagementState extends State<UsersManagement> {
     );
   }
 
-  List<Widget> _buildUserDetailsList(Map<dynamic, dynamic> user) {
+  List<Widget> _buildUserDetailsList(Map<dynamic, dynamic> user, bool isSmallScreen) {
     List<Widget> details = [];
 
     if (user['id'] != null) {
-      details.add(_buildDetailRow('ID', user['id'].toString()));
+      details.add(_buildDetailRow('ID', user['id'].toString(), isSmallScreen));
     }
 
     if (user['firstName'] != null || user['lastName'] != null) {
       final firstName = user['firstName'] as String? ?? '';
       final lastName = user['lastName'] as String? ?? '';
-      details.add(_buildDetailRow('Nom complet', '$firstName $lastName'));
+      details.add(_buildDetailRow('Nom complet', '$firstName $lastName', isSmallScreen));
     }
 
     if (user['birthDayDate'] != null) {
@@ -212,32 +245,34 @@ class _UsersManagementState extends State<UsersManagement> {
         _buildDetailRow(
           'Date de naissance',
           DateFormatter.formatDate(user['birthDayDate']),
+          isSmallScreen,
         ),
       );
       details.add(
         _buildDetailRow(
           'Âge',
           DateFormatter.calculateAge(user['birthDayDate']),
+          isSmallScreen,
         ),
       );
     }
 
     if (user['sexe'] != null) {
-      details.add(_buildDetailRow('Sexe', _translateSexe(user['sexe'])));
+      details.add(_buildDetailRow('Sexe', _translateSexe(user['sexe']), isSmallScreen));
     }
 
     if (user['bio'] != null) {
-      details.add(_buildDetailRow('Bio', user['bio']));
+      details.add(_buildDetailRow('Bio', user['bio'], isSmallScreen));
     }
 
     if (user['subscriptionPrice'] != null) {
       details.add(
-        _buildDetailRow('Prix abonnement', '${user['subscriptionPrice']} €'),
+        _buildDetailRow('Prix abonnement', '${user['subscriptionPrice']} €', isSmallScreen),
       );
     }
 
     if (user['stripeCustomerId'] != null) {
-      details.add(_buildDetailRow('ID Stripe', user['stripeCustomerId']));
+      details.add(_buildDetailRow('ID Stripe', user['stripeCustomerId'], isSmallScreen));
     }
 
     final List<Widget> statusWidgets = [];
@@ -247,6 +282,7 @@ class _UsersManagementState extends State<UsersManagement> {
       statusWidgets.add(
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          margin: const EdgeInsets.only(bottom: 4, right: 4),
           decoration: BoxDecoration(
             color: enabled ? Colors.green.shade50 : Colors.red.shade50,
             borderRadius: BorderRadius.circular(20),
@@ -273,6 +309,7 @@ class _UsersManagementState extends State<UsersManagement> {
       statusWidgets.add(
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          margin: const EdgeInsets.only(bottom: 4, right: 4),
           decoration: BoxDecoration(
             color: subEnabled ? Colors.green.shade50 : Colors.orange.shade50,
             borderRadius: BorderRadius.circular(20),
@@ -299,6 +336,7 @@ class _UsersManagementState extends State<UsersManagement> {
       statusWidgets.add(
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          margin: const EdgeInsets.only(bottom: 4, right: 4),
           decoration: BoxDecoration(
             color: commentsEnabled ? Colors.green.shade50 : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(20),
@@ -325,6 +363,7 @@ class _UsersManagementState extends State<UsersManagement> {
       statusWidgets.add(
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          margin: const EdgeInsets.only(bottom: 4, right: 4),
           decoration: BoxDecoration(
             color: messagesEnabled ? Colors.green.shade50 : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(20),
@@ -395,6 +434,7 @@ class _UsersManagementState extends State<UsersManagement> {
           _buildDetailRow(
             'Vérifié le',
             DateFormatter.formatDateTime(emailVerified['time']),
+            isSmallScreen,
           ),
         );
       }
@@ -405,6 +445,7 @@ class _UsersManagementState extends State<UsersManagement> {
         _buildDetailRow(
           'Créé le',
           DateFormatter.formatDateTime(user['createdAt']),
+          isSmallScreen,
         ),
       );
     }
@@ -415,6 +456,7 @@ class _UsersManagementState extends State<UsersManagement> {
         _buildDetailRow(
           'Token de vérification',
           token.length > 20 ? '${token.substring(0, 20)}...' : token,
+          isSmallScreen,
         ),
       );
     }
@@ -435,23 +477,47 @@ class _UsersManagementState extends State<UsersManagement> {
     }
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+  Widget _buildDetailRow(String label, String value, bool isSmallScreen) {
+    if (isSmallScreen) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.grey,
+              ),
             ),
-          ),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text(
+                '$label:',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(child: Text(value)),
+          ],
+        ),
+      );
+    }
   }
 
   Future<void> _fetchUsers() async {
@@ -462,8 +528,8 @@ class _UsersManagementState extends State<UsersManagement> {
     try {
       final response = await ApiService().request(
         method: 'GET',
-        endpoint: '/users', // Endpoint pour récupérer tous les utilisateurs
-        withAuth: true, // Utilise le token stocké dans les SharedPreferences
+        endpoint: '/users',
+        withAuth: true,
       );
 
       if (response.data is List) {
