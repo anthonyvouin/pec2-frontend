@@ -121,8 +121,8 @@ class _FreeFeedState extends State<FreeFeed> {
                           constraints: const BoxConstraints(
                             maxWidth: 400,
                             minWidth: 400,
-                            minHeight: 580,
-                            maxHeight: 580,
+                            minHeight: 550,
+                            maxHeight: 550,
                           ),
                           child: PostCard(
                             post: post,

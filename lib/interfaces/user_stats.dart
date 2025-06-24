@@ -36,10 +36,10 @@ class UserStats {
   factory UserStats.fromJson(Map<String, dynamic> json) {
     return UserStats(
       subscriberLength: json['subscriberLength'],
-      subscribers:
+      subscribers: json['subscribers'] != null?
           (json['subscribers'] as List)
               .map((e) => UserNameStat.fromJson(e))
-              .toList(),
+              .toList() : [],
       gender: Map<String, double>.from(json['gender']),
     );
   }

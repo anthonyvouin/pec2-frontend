@@ -20,6 +20,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:toastification/toastification.dart';
 
+import '../../../components/form/custom_form_field.dart';
+import '../../../components/form/loading_button.dart';
+import '../../../services/validators_service.dart';
 import 'update_profil_service.dart';
 
 class UpdateProfile extends StatefulWidget {
@@ -30,56 +33,54 @@ class UpdateProfile extends StatefulWidget {
 }
 
 class _UpdateProfileState extends State<UpdateProfile> {
-  late TextEditingController pseudoController;
-  late TextEditingController emailController;
-  late TextEditingController firstNameController;
-  late TextEditingController lastNameController;
-  late TextEditingController bioController;
-  String avatarUrl = "";
+  late TextEditingController _pseudoController;
+  late TextEditingController _emailController;
+  late TextEditingController _firstNameController;
+  late TextEditingController _lastNameController;
+  late TextEditingController _bioController;
+  String _avatarUrl = "";
   final LabelAndInput _labelAndInput = LabelAndInput();
   final UpdateProfileService _updateProfileService = UpdateProfileService();
   final CheckFormData _checkFormData = CheckFormData();
   final ApiService _apiService = ApiService();
   final ImagePicker _picker = ImagePicker();
-  late UserNotifier userNotifier;
-  DateTime? birthdayDate;
-  String? selectedSexe;
-  bool isValidPseudo = true;
-  bool isValidFirstName = true;
-  bool isValidLastName = true;
+  late UserNotifier _userNotifier;
+  DateTime? _birthdayDate;
+  String? _selectedSexe;
   bool isValidBirthdayDate = true;
   bool isValidSexe = true;
-  bool _isLoading = false;
   bool isChangeImage = false;
-  late User user;
+  late User _user;
+  bool _isSubmitted = false;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
-    userNotifier = context.read<UserNotifier>();
-    user = userNotifier.user!;
-    avatarUrl =
-        user.profilePicture.trim() != ""
-            ? userNotifier.user!.profilePicture
+    _userNotifier = context.read<UserNotifier>();
+    _user = _userNotifier.user!;
+    _avatarUrl =
+        _user.profilePicture.trim() != ""
+            ? _userNotifier.user!.profilePicture
             : "";
-    pseudoController = TextEditingController(text: user.userName);
-    emailController = TextEditingController(text: user.email);
-    firstNameController = TextEditingController(text: user.firstName);
-    lastNameController = TextEditingController(text: user.lastName);
-    bioController = TextEditingController(text: user.bio ?? "");
+    _pseudoController = TextEditingController(text: _user.userName);
+    _emailController = TextEditingController(text: _user.email);
+    _firstNameController = TextEditingController(text: _user.firstName);
+    _lastNameController = TextEditingController(text: _user.lastName);
+    _bioController = TextEditingController(text: _user.bio ?? "");
     setState(() {
-      birthdayDate = user.birthDayDate;
-      selectedSexe = _updateProfileService.getSexe(user.sexe);
+      _birthdayDate = _user.birthDayDate;
+      _selectedSexe = _updateProfileService.getSexe(_user.sexe);
     });
   }
 
   @override
   void dispose() {
-    pseudoController.dispose();
-    emailController.dispose();
-    firstNameController.dispose();
-    lastNameController.dispose();
-    bioController.dispose();
+    _pseudoController.dispose();
+    _emailController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
@@ -87,13 +88,43 @@ class _UpdateProfileState extends State<UpdateProfile> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Modification profil")),
-      body:
-          _isLoading
-              ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF6C3FFE)),
-              )
-              : _buildUpdateProfileContent(),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            double formWidth =
+            constraints.maxWidth > 800 ? constraints.maxWidth / 3 : double.infinity;
+
+            return SingleChildScrollView(
+              // Ce gesture permet de scroller peu importe où est la souris
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Center(
+                child: Container(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24),
+                  width: formWidth,
+                  child: _buildUpdateProfileContent(),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
+  }
+
+  ImageProvider getProfileImage() {
+    bool avartUrlIsCloudinary = _avatarUrl.contains(
+      "https://res.cloudinary.com/",
+    );
+    if (_avatarUrl.isNotEmpty) {
+      if (avartUrlIsCloudinary || PlatformUtils.isWebPlatform()) {
+        return NetworkImage(_avatarUrl);
+      } else {
+        return FileImage(File(_avatarUrl)) as ImageProvider;
+      }
+    } else {
+      return AssetImage('assets/images/dog.webp');
+    }
   }
 
   Widget _buildUpdateProfileContent() {
@@ -103,167 +134,145 @@ class _UpdateProfileState extends State<UpdateProfile> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           GestureDetector(
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text("Modification image Profile"),
-                    content: const Text(""),
-                    actions: <Widget>[
-                      TextButton(
-                        child: const Text("Télécharger une image"),
-                        onPressed: () async {
-                          Navigator.of(
-                            context,
-                          ).pop(); // On ferme le Dialog avant
+            onTap: () async {
+              if (PlatformUtils.isWebPlatform()) {
+                final FilePickerResult? resultPicker = await FilePicker.platform
+                    .pickFiles(type: FileType.image);
 
-                          if (PlatformUtils.isWebPlatform()) {
-                            final FilePickerResult? resultPicker =
-                                await FilePicker.platform.pickFiles(
-                                  type: FileType.image,
-                                );
+                if (resultPicker != null && resultPicker.files.isNotEmpty) {
+                  final PlatformFile pickedFile = resultPicker.files.single;
 
-                            if (resultPicker != null &&
-                                resultPicker.files.isNotEmpty) {
-                              final PlatformFile pickedFile =
-                                  resultPicker.files.single;
+                  final Uint8List fileBytes = pickedFile.bytes!;
+                  final base64Image = base64Encode(fileBytes);
 
-                              final Uint8List fileBytes = pickedFile.bytes!;
-                              final base64Image = base64Encode(fileBytes);
-
-                              setState(() {
-                                avatarUrl = "data:image/${pickedFile.extension};base64,$base64Image"; // Encodage en base64
-                                isChangeImage = true;
-                              });
-                            }
-                          } else {
-                            XFile? pickedFile = await _picker.pickImage(
-                              source: ImageSource.gallery,
-                            );
-                            if (pickedFile != null) {
-                              setState(() {
-                                avatarUrl = pickedFile.path;
-                                isChangeImage = true;
-                              });
-                            }
-                          }
-                        },
-                      ),
-                    ],
-                  );
-                },
-              );
+                  setState(() {
+                    _avatarUrl =
+                        "data:image/${pickedFile.extension};base64,$base64Image"; // Encodage en base64
+                    isChangeImage = true;
+                  });
+                }
+              } else {
+                XFile? pickedFile = await _picker.pickImage(
+                  source: ImageSource.gallery,
+                );
+                if (pickedFile != null) {
+                  setState(() {
+                    _avatarUrl = pickedFile.path;
+                    isChangeImage = true;
+                  });
+                }
+              }
             },
             child: CircleAvatar(
-              radius: 40,              backgroundImage:
-                  avatarUrl.isNotEmpty
-                      ? PlatformUtils.isWebPlatform()
-                          ? NetworkImage(avatarUrl)
-                          : FileImage(File(avatarUrl)) as ImageProvider
-                      : AssetImage('assets/images/dog.webp'),
+              radius: 40,
+              backgroundImage: getProfileImage(),
               backgroundColor: const Color(0xFFE4DAFF),
             ),
           ),
-          _labelAndInput.buildLabelAndInputText(
-            "Pseudo",
-            pseudoController,
-            "Entrez votre pseudo",
-            obscureText: false,
-            hasError: !isValidPseudo,
-            messageError: "*Vous devez rentrer un pseudo",
-          ),
-          _labelAndInput.buildLabelAndInputText(
-            "Nom de famille",
-            lastNameController,
-            "Entrez votre nom de famille",
-            obscureText: false,
-            hasError: !isValidLastName,
-            messageError: "Le nom est vide",
-          ),
-          _labelAndInput.buildLabelAndInputText(
-            "Prénom",
-            firstNameController,
-            "Entrez votre prénom",
-            obscureText: false,
-            hasError: !isValidFirstName,
-            messageError: "Le prénom est vide",
-          ),
-          _labelAndInput.buildLabelAndInputText(
-            "Bio",
-            bioController,
-            "Entrez votre bio",
-            obscureText: false,
-            maxLine: 5,
-          ),
-          _labelAndInput.buildLabelAndCalendar(
-            "Date d'anniversaire",
-            !isValidBirthdayDate,
-            "La date doit être renseignée",
-            context,
-            setState,
-            birthdayDate,
-            (newDate) => setState(() => birthdayDate = newDate),
-          ),
-          _labelAndInput.buildLabelAndRadioList(
-            "Sexe",
-            !isValidSexe,
-            "Cochez une option",
-            ["Homme", "Femme", "Autre"],
-            selectedSexe,
-            (option) => setState(() => selectedSexe = option),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // Ici, tu peux récupérer les nouvelles valeurs du formulaire
-              _submitForm();
-            },
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 50),
+          const SizedBox(height: 32),
+          Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CustomTextField(
+                  controller: _pseudoController,
+                  label: 'Pseudo',
+                  validators: [RequiredValidator()],
+                ),
+                const SizedBox(height: 16),
+                CustomTextField(
+                  controller: _lastNameController,
+                  label: 'Nom de famille',
+                  validators: [RequiredValidator()],
+                ),
+                const SizedBox(height: 16),
+                CustomTextField(
+                  controller: _firstNameController,
+                  label: 'Prénom',
+                  validators: [RequiredValidator()],
+                ),
+                const SizedBox(height: 16),
+                CustomTextField(
+                  controller: _bioController,
+                  label: 'Bio',
+                  maxLine: 5,
+                  validators: [RequiredValidator()],
+                ),
+                const SizedBox(height: 16),
+                _labelAndInput.buildLabelAndCalendar(
+                  "Date d'anniversaire",
+                  !isValidBirthdayDate,
+                  "La date doit être renseignée",
+                  context,
+                  setState,
+                  _birthdayDate,
+                  (newDate) => setState(() => _birthdayDate = newDate),
+                ),
+                _labelAndInput.buildLabelAndRadioList(
+                  "Sexe",
+                  !isValidSexe,
+                  "Cochez une option",
+                  ["Homme", "Femme", "Autre"],
+                  _selectedSexe,
+                  (option) => setState(() => _selectedSexe = option),
+                ),
+                const SizedBox(height: 24),
+                Center(
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: LoadingButton(
+                      label: 'Enregistrer',
+                      isSubmitted: _isSubmitted,
+                      onPressed: _onSubmit,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            child: const Text("Enregistrer"),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _submitForm() async {
+  Future<void> _onSubmit() async {
+    setState(() {
+      _isSubmitted = true;
+    });
+
+    if (!_formKey.currentState!.validate()) {
+      setState(() {
+        _isSubmitted = false;
+      });
+      return;
+    }
     final isValidValid = _updateProfileService.checkFormIsValid(
-      pseudoController.text,
-      lastNameController.text,
-      firstNameController.text,
-      birthdayDate,
-      selectedSexe,
+      _birthdayDate,
+      _selectedSexe,
     );
 
-    if (isValidValid) {
-      user.userName = pseudoController.text;
-      user.firstName = firstNameController.text;
-      user.lastName = lastNameController.text;
-      user.bio = bioController.text;
+    if (isValidValid && _formKey.currentState!.validate()) {
+      _user.userName = _pseudoController.text;
+      _user.firstName = _firstNameController.text;
+      _user.lastName = _lastNameController.text;
+      _user.bio = _bioController.text;
 
-      if (birthdayDate != null) {
-        user.birthDayDate = birthdayDate ?? DateTime(2023, 12, 4);
+      if (_birthdayDate != null) {
+        _user.birthDayDate = _birthdayDate ?? DateTime(2023, 12, 4);
       }
-      user.sexe = selectedSexe ?? "MAN";
-      setState(() {
-        _isLoading = true;
-      });
+      _user.sexe = _selectedSexe ?? "MAN";
 
       late final ApiResponse response;
       try {
         var file;
         if (isChangeImage) {
           if (PlatformUtils.isWebPlatform()) {
-            final imageData =
-                avatarUrl.split(
-                  ',',
-                )[1]; // Enlève la partie "data:image/...;base64,"
+            final imageData = _avatarUrl.split(',')[1];
             final imageBytes = base64Decode(imageData);
-            final headerSplit = avatarUrl.split(',');
-            final mime =
-                headerSplit[0].split(':')[1].split(';')[0]; // e.g. image/png
+            final headerSplit = _avatarUrl.split(',');
+            final mime = headerSplit[0].split(':')[1].split(';')[0];
             final ext = mime.split('/')[1];
             final mimeType = lookupMimeType('', headerBytes: imageBytes);
             final mediaType =
@@ -274,14 +283,13 @@ class _UpdateProfileState extends State<UpdateProfile> {
               'profilePicture',
               imageBytes,
               filename: 'profile.$ext',
-              contentType:
-                  mediaType, // Utiliser le mimeType de l'image, adapte-le à ton besoin
+              contentType: mediaType,
             );
           } else {
-            String? mimeType = lookupMimeType(avatarUrl);
+            String? mimeType = lookupMimeType(_avatarUrl);
             file = await http.MultipartFile.fromPath(
               'profilePicture',
-              avatarUrl,
+              _avatarUrl,
               contentType: mimeType != null ? MediaType.parse(mimeType) : null,
             );
           }
@@ -289,13 +297,13 @@ class _UpdateProfileState extends State<UpdateProfile> {
           response = await _apiService.uploadMultipart(
             endpoint: '/users/profile',
             fields: {
-              "userName": pseudoController.text,
-              "bio": bioController.text,
-              "firstName": firstNameController.text,
-              "email": user.email,
-              "lastName": lastNameController.text,
-              "birthDayDate": birthdayDate?.toUtc().toIso8601String() ?? "",
-              "sexe": selectedSexe ?? "",
+              "userName": _pseudoController.text,
+              "bio": _bioController.text,
+              "firstName": _firstNameController.text,
+              "email": _user.email,
+              "lastName": _lastNameController.text,
+              "birthDayDate": _birthdayDate?.toUtc().toIso8601String() ?? "",
+              "sexe": _selectedSexe ?? "",
             },
             file: file,
             method: 'put',
@@ -305,53 +313,44 @@ class _UpdateProfileState extends State<UpdateProfile> {
             method: 'put',
             endpoint: '/users/profile',
             body: {
-              "userName": pseudoController.text,
-              "bio": bioController.text,
-              "firstName": firstNameController.text,
-              "email": user.email,
-              "lastName": lastNameController.text,
-              "birthDayDate": birthdayDate?.toUtc().toIso8601String(),
-              "sexe": selectedSexe,
+              "userName": _pseudoController.text,
+              "bio": _bioController.text,
+              "firstName": _firstNameController.text,
+              "email": _user.email,
+              "lastName": _lastNameController.text,
+              "birthDayDate": _birthdayDate?.toUtc().toIso8601String(),
+              "sexe": _selectedSexe,
             },
             withAuth: true,
           );
         }
 
         if (response.success) {
-          userNotifier.updateUser(response.data);
+          _userNotifier.updateUser(response.data);
           context.pushReplacement(profileRoute);
+          ToastService.showToast(
+            "Profil mit à jour",
+            ToastificationType.success,
+          );
         } else {
           String message = _updateProfileService.getErrorMessage(
             response.statusCode,
           );
           ToastService.showToast(
             "Erreur lors de la création \n du compte \n$message",
-            ToastificationType.error
+            ToastificationType.error,
           );
         }
       } catch (e) {
         ToastService.showToast(
           "Erreur lors de la création \n du compte",
-            ToastificationType.error
+          ToastificationType.error,
         );
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
       }
     } else {
       setState(() {
-        isValidPseudo = _checkFormData.inputIsNotEmptyOrNull(
-          pseudoController.text,
-        );
-        isValidFirstName = _checkFormData.inputIsNotEmptyOrNull(
-          firstNameController.text,
-        );
-        isValidLastName = _checkFormData.inputIsNotEmptyOrNull(
-          lastNameController.text,
-        );
-        isValidBirthdayDate = _checkFormData.dateIsNotEmpty(birthdayDate);
-        isValidSexe = _checkFormData.inputIsNotEmptyOrNull(selectedSexe);
+        isValidBirthdayDate = _checkFormData.dateIsNotEmpty(_birthdayDate);
+        isValidSexe = _checkFormData.inputIsNotEmptyOrNull(_selectedSexe);
       });
     }
     ;

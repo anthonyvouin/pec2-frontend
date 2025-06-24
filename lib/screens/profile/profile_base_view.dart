@@ -1,5 +1,5 @@
+import 'package:firstflutterapp/components/feed/profile_feed.dart';
 import 'package:firstflutterapp/config/router.dart';
-import 'package:firstflutterapp/interfaces/post.dart';
 import 'package:firstflutterapp/interfaces/user.dart';
 import 'package:firstflutterapp/services/api_service.dart';
 import 'package:firstflutterapp/services/toast_service.dart';
@@ -11,16 +11,10 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../components/free-feed/container.dart';
-import '../../components/post-card/container.dart';
-import '../../notifiers/sse_provider.dart';
 import '../../notifiers/userNotififers.dart';
 import 'package:firstflutterapp/components/follow/followers_list.dart';
 import 'package:firstflutterapp/components/follow/followings_list.dart';
 import 'package:firstflutterapp/components/follow/button_follow.dart';
-import 'package:firstflutterapp/screens/message/message.dart';
-
-import '../home/home-service.dart';
 
 class ProfileBaseView extends StatefulWidget {
   final String? username;
@@ -230,51 +224,6 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text(
-      //     "Profile",
-      //     style: const TextStyle(
-      //       fontSize: 24,
-      //       fontWeight: FontWeight.bold,
-      //       color: Colors.black,
-      //     ),
-      //   ),
-      //   actions: [
-      //     if (widget.isCurrentUser)
-      //       Positioned(
-      //         right: 0,
-      //         child: Row(
-      //           children: [
-      //             IconButton(
-      //               onPressed: () => context.goNamed("statistic-creator"),
-      //               icon: const Icon(Icons.timeline),
-      //             ),
-      //             IconButton(
-      //               onPressed: () {
-      //                 if (_user != null) {
-      //                   context.push('/profile/edit');
-      //                 }
-      //               },
-      //               icon: const Icon(Icons.edit),
-      //             ),
-      //             IconButton(
-      //               onPressed: () => context.goNamed("messages"),
-      //               icon: const Icon(Icons.mail_outline),
-      //             ),
-      //             IconButton(
-      //               icon: const Icon(Icons.settings),
-      //               onPressed: () {
-      //                 context.push(profileParams);
-      //               },
-      //             ),
-      //           ],
-      //         ),
-      //       ),
-      //   ],
-      //   backgroundColor: Colors.white,
-      //   foregroundColor: Colors.black,
-      //   elevation: 0,
-      // ),
       appBar: AppBar(
         title: const Text(
           "Profile",
@@ -284,32 +233,33 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             color: Colors.black,
           ),
         ),
-        actions: widget.isCurrentUser
-            ? [
-          IconButton(
-            onPressed: () => context.goNamed("statistic-creator"),
-            icon: const Icon(Icons.timeline),
-          ),
-          IconButton(
-            onPressed: () {
-              if (_user != null) {
-                context.push('/profile/edit');
-              }
-            },
-            icon: const Icon(Icons.edit),
-          ),
-          IconButton(
-            onPressed: () => context.goNamed("messages"),
-            icon: const Icon(Icons.mail_outline),
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              context.push(profileParams);
-            },
-          ),
-        ]
-            : [],
+        actions:
+            widget.isCurrentUser
+                ? [
+                  IconButton(
+                    onPressed: () => context.goNamed("statistic-creator"),
+                    icon: const Icon(Icons.timeline),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      if (_user != null) {
+                        context.goNamed('edit-profile');
+                      }
+                    },
+                    icon: const Icon(Icons.edit),
+                  ),
+                  IconButton(
+                    onPressed: () => context.goNamed("messages"),
+                    icon: const Icon(Icons.mail_outline),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.settings),
+                    onPressed: () {
+                      context.push(profileParams);
+                    },
+                  ),
+                ]
+                : [],
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -421,29 +371,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
           const SizedBox(height: 8),
           Divider(height: 1),
           const SizedBox(height: 8),
-          if (isFree == true) ...[
-            FreeFeed(
-              currentUser: true,
-              isFree: isFree,
-              userId: _user!.id,
-              homeFeed: false,
-            ),
-          ] else if (_user != null &&
-              _user!.role == "CONTENT_CREATOR" &&
-              !isFree) ...[
-            if (_isSubscriber || _currentUser != null) ...[
-              FreeFeed(
-                currentUser: true,
-                isFree: isFree,
-                userId: _user!.id,
-                homeFeed: false,
-              ),
-            ] else ...[
-              const Text("Vous devez vous abonner pour voir ce contenu"),
-            ],
-          ] else ...[
-            const Text("Cet utilisateur n'est pas un créateur"),
-          ],
+          ProfileFeed(currentUser: widget.isCurrentUser, isFree: isFree, userId: _user!.id,isSubscriber: _isSubscriber),
         ],
       ),
     );
@@ -486,9 +414,6 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                 MaterialPageRoute(builder: (context) => CreatorView()),
               );
             },
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 50),
-            ),
             child: const Text("Devenir créateur"),
           ),
           const SizedBox(height: 16),
@@ -500,6 +425,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
       return Column(
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ButtonFollow(
                 key: ValueKey(widget.username ?? ''),
@@ -538,97 +464,93 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                 ),
               if (_subcriptionCanceled && _subscriptionCanceledAt != null)
                 Text(
-                  "Abonné jusqu'au " +
-                      DateFormat('dd/MM/yyyy').format(_subscriptionCanceledAt!),
+                  "Abonné jusqu'au ${DateFormat('dd/MM/yyyy').format(_subscriptionCanceledAt!)}",
                 ),
             ],
           ),
           const SizedBox(height: 16),
-          // Afficher le bouton d'envoi de message uniquement si l'utilisateur accepte les messages
-          if (_user?.messageEnabled != false && !widget.isCurrentUser)
-            ElevatedButton.icon(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    final TextEditingController _msgController =
-                        TextEditingController();
-                    bool sending = false;
-                    return StatefulBuilder(
-                      builder: (context, setState) {
-                        return AlertDialog(
-                          title: Text(
-                            'Envoyer un message à @${_user?.userName ?? ''}',
+          if (_user?.messageEnabled == true && !widget.isCurrentUser)
+          ElevatedButton.icon(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  final TextEditingController _msgController =
+                      TextEditingController();
+                  bool sending = false;
+                  return StatefulBuilder(
+                    builder: (context, setState) {
+                      return AlertDialog(
+                        title: Text(
+                          'Envoyer un message à @${_user?.userName ?? ''}',
+                        ),
+                        content: TextField(
+                          controller: _msgController,
+                          decoration: const InputDecoration(
+                            hintText: 'Votre message...',
                           ),
-                          content: TextField(
-                            controller: _msgController,
-                            decoration: const InputDecoration(
-                              hintText: 'Votre message...',
-                            ),
-                            minLines: 1,
-                            maxLines: 5,
+                          minLines: 1,
+                          maxLines: 5,
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Annuler'),
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Annuler'),
-                            ),
-                            ElevatedButton(
-                              onPressed:
-                                  sending
-                                      ? null
-                                      : () async {
-                                        if (_msgController.text.trim().isEmpty)
-                                          return;
-                                        setState(() => sending = true);
-                                        final ApiService api = ApiService();
-                                        final resp = await api.request(
-                                          method: 'POST',
-                                          endpoint: '/private-messages',
-                                          withAuth: true,
-                                          body: {
-                                            'receiverUserName': _user?.userName,
-                                            'content': _msgController.text.trim(),
-                                          },
+                          ElevatedButton(
+                            onPressed:
+                                sending
+                                    ? null
+                                    : () async {
+                                      if (_msgController.text.trim().isEmpty)
+                                        return;
+                                      setState(() => sending = true);
+                                      final ApiService api = ApiService();
+                                      final resp = await api.request(
+                                        method: 'POST',
+                                        endpoint: '/private-messages',
+                                        withAuth: true,
+                                        body: {
+                                          'receiverUserName': _user?.userName,
+                                          'content': _msgController.text.trim(),
+                                        },
+                                      );
+                                      setState(() => sending = false);
+                                      if (resp.success) {
+                                        Navigator.pop(context);
+                                        ToastService.showToast(
+                                          'Message envoyé !',
+                                          ToastificationType.success,
                                         );
-                                        setState(() => sending = false);
-                                        if (resp.success) {
-                                          Navigator.pop(context);
-                                          ToastService.showToast(
-                                            'Message envoyé !',
-                                            ToastificationType.success,
-                                          );
-                                        } else {
-                                          ToastService.showToast(
-                                            'Erreur : ' +
-                                                (resp.error ??
-                                                    'envoi impossible'),
-                                            ToastificationType.error,
-                                          );
-                                        }
-                                      },
-                              child:
-                                  sending
-                                      ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                      : const Text('Envoyer'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                );
-              },
-              icon: const Icon(Icons.mail_outline),
-              label: const Text('Envoyer un message'),
-              style: AppTheme.emptyButtonStyle,
-            ),
+                                      } else {
+                                        ToastService.showToast(
+                                          'Erreur : ${(resp.error ?? 'envoi impossible}' )}',
+                                          ToastificationType.error,
+                                        );
+                                      }
+                                },
+                            child:
+                                sending
+                                    ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                    : const Text('Envoyer'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              );
+            },
+            icon: const Icon(Icons.mail_outline),
+            label: const Text('Envoyer un message'),
+            style: AppTheme.emptyButtonStyle,
+          ),
         ],
       );
     }

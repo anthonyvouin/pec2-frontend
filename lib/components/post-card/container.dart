@@ -50,7 +50,8 @@ class _PostCardState extends State<PostCard> {
     } else {
       return 'À l\'instant';
     }
-  }  void _openCommentsModal(BuildContext context) {
+  }
+  void _openCommentsModal(BuildContext context) {
     if (!widget.post.commentEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -139,14 +140,13 @@ class _PostCardState extends State<PostCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12), // Réduit de 16 à 12 pour éviter le dépassement
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 4, right: 4, top: 0, bottom: 12),
+            padding: const EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 10),
             child: Row(
               children: [                
                 CircleAvatar(
@@ -161,7 +161,7 @@ class _PostCardState extends State<PostCard> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        context.push('/profile/${widget.post.user.userName}'); // Navigate to user profile
+                        context.go('/profile/${widget.post.user.userName}'); // Navigate to user profile
                       },
                       child: Text(
                         widget.post.user.userName,
@@ -266,28 +266,28 @@ class _PostCardState extends State<PostCard> {
           // Post caption
           if (widget.post.name.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(left: 4, right: 4, top: 12, bottom: 0),
+              padding: const EdgeInsets.only(left: 10, right: 4, top: 12, bottom: 0),
               child: Text(widget.post.name, style: const TextStyle(fontSize: 15)),
             ),
           
           // Post description
-          if (widget.post.description.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(left: 4, right: 4, top: 8, bottom: 8),
-              child: Container(
-                constraints: const BoxConstraints(maxHeight: 60),
-                child: SingleChildScrollView(
-                  child: Text(
-                    widget.post.description,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                ),
-              ),
-            ),
+          // if (widget.post.description.isNotEmpty)
+          //   Padding(
+          //     padding: const EdgeInsets.only(left: 4, right: 4, top: 8, bottom: 8),
+          //     child: Container(
+          //       constraints: const BoxConstraints(maxHeight: 60),
+          //       child: SingleChildScrollView(
+          //         child: Text(
+          //           widget.post.description,
+          //           style: const TextStyle(fontSize: 14, color: Colors.grey),
+          //         ),
+          //       ),
+          //     ),
+          //   ),
 
           // Like and comment actions
           Padding(
-            padding: const EdgeInsets.only(left: 0, right: 4, top: 4, bottom: 4),
+            padding: const EdgeInsets.only(left: 0, right: 4, top: 4, bottom: 0),
             child: Row(
               children: [                
                 IconButton(

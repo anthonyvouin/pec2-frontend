@@ -30,25 +30,13 @@ class PostCreationService {
   }
 
   // Valider les données du post
-  String? validatePostData({
-    required List<Category> selectedCategories,
-    required String name,
-    required String description,
-  }) {
+  String? validatePostData({required List<Category> selectedCategories}) {
     if (selectedCategories.isEmpty) {
       return 'Veuillez sélectionner au moins une catégorie';
     }
-
-    if (name.trim().isEmpty) {
-      return 'Veuillez ajouter un nom';
-    }
-
-    if (description.trim().isEmpty) {
-      return 'Veuillez ajouter une description';
-    }
-
     return null;
   }
+
   // Publier un nouveau post
   Future<void> publishPost({
     required String imageUrl, // Changé de File à XFile
@@ -68,10 +56,11 @@ class PostCreationService {
           final mime = headerSplit[0].split(':')[1].split(';')[0];
           final ext = mime.split('/')[1];
           final mimeType = lookupMimeType('', headerBytes: imageBytes);
-          final mediaType = mimeType != null
+          final mediaType =
+              mimeType != null
                   ? MediaType.parse(mimeType)
                   : MediaType('application', 'octet-stream');
-          
+
           file = http.MultipartFile.fromBytes(
             'postPicture',
             imageBytes,
@@ -80,15 +69,19 @@ class PostCreationService {
           );
 
           if (kDebugMode) {
-            print('Image URL est un data URI, longueur des bytes: ${imageBytes.length}');
+            print(
+              'Image URL est un data URI, longueur des bytes: ${imageBytes.length}',
+            );
           }
         } else {
           // Cas où imageUrl est un path de blob URL sur le web
           if (kDebugMode) {
             print('Web platform detected, image URL is not base64: $imageUrl');
           }
-          
-          throw Exception('Format d\'image invalide pour le web. Attendu: data:image/*;base64,...');
+
+          throw Exception(
+            'Format d\'image invalide pour le web. Attendu: data:image/*;base64,...',
+          );
         }
       } else {
         // Pour les plateformes mobiles
@@ -98,9 +91,10 @@ class PostCreationService {
           imageUrl,
           contentType: mimeType != null ? MediaType.parse(mimeType) : null,
         );
-      }      
-      
-      List<String> categoryIds = selectedCategories.map((category) => category.id.toString()).toList();
+      }
+
+      List<String> categoryIds =
+          selectedCategories.map((category) => category.id.toString()).toList();
       await _apiService.uploadMultipart(
         endpoint: '/posts',
         fields: {
@@ -118,6 +112,32 @@ class PostCreationService {
     }
   }
 
+  Future<void> updatePost({
+    required String id,
+    required String name,
+    required String description,
+    required List<Category> selectedCategories,
+    required bool isFree,
+  }) async {
+    try {
+      List<String> categoryIds =
+          selectedCategories.map((category) => category.id.toString()).toList();
+      await _apiService.request(
+        endpoint: '/posts/$id',
+        body: {
+          "name": name.trim(),
+          "description": description.trim(),
+          "categories": categoryIds,
+          "isFree": isFree,
+        },
+        method: 'put',
+        withAuth: true,
+      );
+    } catch (e) {
+      throw Exception('Erreur lors de la Modification du post: $e');
+    }
+  }
+
   // Méthode pour initialiser la caméra
   Future<List<CameraDescription>> getAvailableCameras() async {
     try {
@@ -126,6 +146,7 @@ class PostCreationService {
       throw Exception('Erreur lors de l\'initialisation de la caméra: $e');
     }
   }
+
   File convertXFileToFile(XFile xFile) {
     if (kIsWeb) {
       throw Exception(

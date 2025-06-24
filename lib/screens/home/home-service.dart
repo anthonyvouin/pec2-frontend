@@ -14,10 +14,11 @@ class PostsListingService {
     int page,
     int limit,
     bool isFree,
-    String? userId,
-    bool homeFeed,
-  ) async {
-    String args = "?isFree=$isFree&page=$page&limit=$limit&homeFeed=$homeFeed";
+    String? userId, [
+    bool? homeFeed,
+  ]) async {
+    String args =
+        "?isFree=$isFree&page=$page&limit=$limit&homeFeed=${homeFeed ?? false}";
     if (userId != null) {
       args = "$args&userIs=$userId";
     }
