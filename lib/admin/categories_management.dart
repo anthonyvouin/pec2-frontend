@@ -23,28 +23,36 @@ class _CategoriesManagementState extends State<CategoriesManagement> {
   @override
   void initState() {
     super.initState();
+    developer.log('CategoriesManagement - initState');
     _fetchCategories();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    developer.log('CategoriesManagement - didChangeDependencies');
+    
     _deleteHandler = CategoryDelete(
       context: context,
       onDeleteSuccess: () {
+        developer.log('Delete success callback appelé');
         setState(() {
           _fetchCategories();
         });
       },
     );
+    
     _updateHandler = CategoryUpdate(
       context: context,
       onUpdateSuccess: () {
+        developer.log('Update success callback appelé');
         setState(() {
           _fetchCategories();
         });
       },
     );
+    
+    developer.log('Handlers initialisés');
   }
 
   @override
@@ -153,20 +161,37 @@ class _CategoriesManagementState extends State<CategoriesManagement> {
                               leading: category['pictureUrl'] != null
                                   ? ClipRRect(
                                       borderRadius: BorderRadius.circular(25),
-                                      child: Image.network(
-                                        category['pictureUrl'],
+                                      child: SizedBox(
                                         width: 50,
                                         height: 50,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return CircleAvatar(
-                                            backgroundColor: Colors.grey.shade200,
-                                            child: const Icon(Icons.image_not_supported),
-                                          );
-                                        },
+                                        child: Image.network(
+                                          category['pictureUrl'],
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return CircleAvatar(
+                                              radius: 25,
+                                              backgroundColor: Colors.grey.shade200,
+                                              child: const Icon(Icons.image_not_supported),
+                                            );
+                                          },
+                                          loadingBuilder: (context, child, loadingProgress) {
+                                            if (loadingProgress == null) return child;
+                                            return Center(
+                                              child: CircularProgressIndicator(
+                                                value: loadingProgress.expectedTotalBytes != null
+                                                    ? loadingProgress.cumulativeBytesLoaded /
+                                                        loadingProgress.expectedTotalBytes!
+                                                    : null,
+                                              ),
+                                            );
+                                          },
+                                        ),
                                       ),
                                     )
                                   : CircleAvatar(
+                                      radius: 25,
                                       backgroundColor: Colors.grey.shade200,
                                       child: const Icon(Icons.category),
                                     ),
@@ -193,6 +218,7 @@ class _CategoriesManagementState extends State<CategoriesManagement> {
                                                     title: const Text('Modifier'),
                                                     onTap: () {
                                                       Navigator.pop(context);
+                                                      developer.log('Bouton modifier cliqué (mobile) pour ${category['name']}');
                                                       _updateHandler.showUpdateDialog(category);
                                                     },
                                                   ),
@@ -223,6 +249,7 @@ class _CategoriesManagementState extends State<CategoriesManagement> {
                                         IconButton(
                                           icon: const Icon(Icons.edit_outlined),
                                           onPressed: () {
+                                            developer.log('Bouton modifier cliqué (desktop) pour ${category['name']}');
                                             _updateHandler.showUpdateDialog(category);
                                           },
                                           tooltip: 'Modifier',
@@ -341,6 +368,7 @@ class _CategoriesManagementState extends State<CategoriesManagement> {
             ),
             const SizedBox(height: 8),
             Stack(
+              fit: StackFit.expand,
               children: [
                 Container(
                   height: 200,
