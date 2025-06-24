@@ -80,6 +80,19 @@ class _FreeFeedState extends State<FreeFeed> {
     }
   }
 
+  void _handlePostUpdate(String postId) {
+    final sseProvider = Provider.of<SSEProvider>(context, listen: false);
+    final isReported = sseProvider.isPostReported(postId);
+    
+    if (isReported) {
+      setState(() {
+        final previousLength = _posts.length;
+        _posts.removeWhere((post) => post.id == postId);
+        final newLength = _posts.length;
+      });
+    }
+  }
+
   Widget _buildForYouSection() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -114,6 +127,7 @@ class _FreeFeedState extends State<FreeFeed> {
                           child: PostCard(
                             post: post,
                             isSSEConnected: isConnected,
+                            onPostUpdated: _handlePostUpdate,
                           ),
                         );
                       },
@@ -128,9 +142,28 @@ class _FreeFeedState extends State<FreeFeed> {
 
   @override
   Widget build(BuildContext context) {
-    return Provider<List<Post>>.value(
-      value: _posts,
-      child: _buildForYouSection(),
+    return Consumer<SSEProvider>(
+      builder: (context, sseProvider, child) {        
+        final postsToRemove = _posts.where((post) => 
+          sseProvider.isPostReported(post.id)).toList();
+        
+        if (postsToRemove.isNotEmpty) {
+          Future.microtask(() {
+            if (mounted) {
+              setState(() {
+                for (final post in postsToRemove) {
+                  _posts.removeWhere((p) => p.id == post.id);
+                }
+              });
+            }
+          });
+        }
+        
+        return Provider<List<Post>>.value(
+          value: _posts,
+          child: _buildForYouSection(),
+        );
+      },
     );
   }
 }

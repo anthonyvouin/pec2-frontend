@@ -5,6 +5,7 @@ import 'package:firstflutterapp/interfaces/user.dart';
 class Post {
   final String id;
   final String name;
+  final String description;
   final String pictureUrl;
   final bool isFree;
   final bool enable;
@@ -17,10 +18,12 @@ class Post {
   final int commentsCount;
   final int reportsCount;
   List<Comment> comments;
+  final bool commentEnabled;
   
   Post({
     required this.id,
     required this.name,
+    this.description = '',
     required this.pictureUrl,
     required this.user,
     this.isFree = false,
@@ -33,12 +36,13 @@ class Post {
     this.likesCount = 0,
     this.commentsCount = 0,
     this.reportsCount = 0,
+    this.commentEnabled = true, // Valeur par défaut à true
   });
-  
-  factory Post.fromJson(Map<String, dynamic> json) {
+    factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
       id: json['id'],
       name: json['name'],
+      description: json['description'] ?? '',
       pictureUrl: json['pictureUrl'],
       isFree: json['isFree'] ?? false,
       enable: json['enable'] ?? true,
@@ -59,13 +63,14 @@ class Post {
       likesCount: json['likesCount'] ?? 0,
       commentsCount: json['commentsCount'] ?? 0,
       reportsCount: json['reportsCount'] ?? 0,
+      commentEnabled: json['commentEnabled'] ?? true, // Récupération depuis le JSON
     );
   }
-  
-  Map<String, dynamic> toJson() {
+    Map<String, dynamic> toJson() {
     return {
       'id': id,
       'name': name,
+      'description': description,
       'pictureUrl': pictureUrl,
       'isFree': isFree,
       'enable': enable,
@@ -78,6 +83,7 @@ class Post {
       'likesCount': likesCount,
       'commentsCount': commentsCount,
       'reportsCount': reportsCount,
+      'commentEnabled': commentEnabled,
     };
   }
 }
