@@ -97,25 +97,47 @@ class _AdminContentCreatorState extends State<AdminContentCreator> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isSmallScreen = MediaQuery.of(context).size.width < 900;
+
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Gestion des créateurs de contenu",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              ElevatedButton.icon(
-                onPressed: _fetchContentCreators,
-                icon: Icon(_isLoading ? Icons.hourglass_empty : Icons.refresh),
-                label: Text(_isLoading ? "Chargement..." : "Actualiser"),
-              ),
-            ],
-          ),
+          if (isSmallScreen)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Gestion des créateurs de contenu",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _fetchContentCreators,
+                    icon: Icon(_isLoading ? Icons.hourglass_empty : Icons.refresh),
+                    label: Text(_isLoading ? "Chargement..." : "Actualiser"),
+                  ),
+                ),
+              ],
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Gestion des créateurs de contenu",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _fetchContentCreators,
+                  icon: Icon(_isLoading ? Icons.hourglass_empty : Icons.refresh),
+                  label: Text(_isLoading ? "Chargement..." : "Actualiser"),
+                ),
+              ],
+            ),
           const SizedBox(height: 24),
           Expanded(
             child:
@@ -176,19 +198,33 @@ class _AdminContentCreatorState extends State<AdminContentCreator> {
                                 Text(
                                   creator['companyType'] ?? 'Type non spécifié',
                                 ),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'SIRET: ${creator['siretNumber'] ?? 'Non spécifié'}',
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                        ),
+                                isSmallScreen
+                                    ? Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'SIRET: ${creator['siretNumber'] ?? 'Non spécifié'}',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          _buildStatusBadge(creator),
+                                        ],
+                                      )
+                                    : Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              'SIRET: ${creator['siretNumber'] ?? 'Non spécifié'}',
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                          ),
+                                          _buildStatusBadge(creator),
+                                        ],
                                       ),
-                                    ),
-                                    _buildStatusBadge(creator),
-                                  ],
-                                ),
                               ],
                             ),
                             children: [
@@ -200,73 +236,88 @@ class _AdminContentCreatorState extends State<AdminContentCreator> {
                                     _buildDetailRow(
                                       'ID',
                                       creator['id']?.toString() ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'ID Utilisateur',
                                       creator['userId']?.toString() ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'Entreprise',
                                       creator['companyName'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'Type d\'entreprise',
                                       creator['companyType'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'SIRET',
                                       creator['siretNumber'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'TVA',
                                       creator['vatNumber'] ?? 'Non renseigné',
+                                      isSmallScreen,
                                     ),
                                     const SizedBox(height: 16),
-                                    const Text(
+                                    Text(
                                       'Adresse:',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                                        fontSize: isSmallScreen ? 14 : 16,
+                                        color: isSmallScreen ? Colors.grey.shade700 : null,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                     _buildDetailRow(
                                       'Rue',
                                       creator['streetAddress'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'Code postal',
                                       creator['postalCode'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'Ville',
                                       creator['city'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'Pays',
                                       creator['country'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     const SizedBox(height: 16),
-                                    const Text(
+                                    Text(
                                       'Informations bancaires:',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                                        fontSize: isSmallScreen ? 14 : 16,
+                                        color: isSmallScreen ? Colors.grey.shade700 : null,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                     _buildDetailRow(
                                       'IBAN',
                                       creator['iban'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'BIC',
                                       creator['bic'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     const SizedBox(height: 16),
                                     _buildDetailRow(
                                       'Document justificatif',
                                       creator['documentProofUrl'] ?? 'N/A',
+                                      isSmallScreen,
                                       isLink: true,
                                     ),
                                     const SizedBox(height: 16),
@@ -275,6 +326,7 @@ class _AdminContentCreatorState extends State<AdminContentCreator> {
                                       DateFormatter.formatDateTime(
                                         creator['createdAt'],
                                       ),
+                                      isSmallScreen,
                                     ),
                                     if (creator['updatedAt'] != null)
                                       _buildDetailRow(
@@ -282,6 +334,7 @@ class _AdminContentCreatorState extends State<AdminContentCreator> {
                                         DateFormatter.formatDateTime(
                                           creator['updatedAt'],
                                         ),
+                                        isSmallScreen,
                                       ),
                                   ],
                                 ),
@@ -297,169 +350,213 @@ class _AdminContentCreatorState extends State<AdminContentCreator> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isLink = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+  Widget _buildDetailRow(String label, String value, bool isSmallScreen, {bool isLink = false}) {
+    if (isSmallScreen && !isLink) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.grey,
+              ),
             ),
-          ),
-          Expanded(
-            child:
-                isLink && value != 'N/A'
-                    ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 4),
+            Text(value),
+          ],
+        ),
+      );
+    } else if (isLink && value != 'N/A') {
+      // Cas spécial pour les liens (documents)
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isSmallScreen)
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              )
+            else
+              Row(
+                children: [
+                  SizedBox(
+                    width: 140,
+                    child: Text(
+                      '$label:',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () async {
+                final url = Uri.parse(value);
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(
+                    url,
+                    mode: LaunchMode.externalApplication,
+                  );
+                }
+              },
+              icon: const Icon(Icons.fullscreen),
+              label: const Text('Voir en plein écran'),
+            ),
+            const SizedBox(height: 8),
+            _isPdfFile(value)
+                ? Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        TextButton.icon(
-                          onPressed: () async {
+                        Icon(
+                          Icons.picture_as_pdf,
+                          size: 64,
+                          color: Colors.red.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Document PDF',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Cliquez sur "Voir en plein écran" pour ouvrir',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                : Stack(
+                  children: [
+                    Container(
+                      height: 200,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey.shade300,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          value,
+                          fit: BoxFit.contain,
+                          loadingBuilder: (
+                            context,
+                            child,
+                            loadingProgress,
+                          ) {
+                            if (loadingProgress == null)
+                              return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress
+                                                .expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress
+                                                .expectedTotalBytes!
+                                        : null,
+                              ),
+                            );
+                          },
+                          errorBuilder: (
+                            context,
+                            error,
+                            stackTrace,
+                          ) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    size: 48,
+                                    color: Colors.red.shade400,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'Erreur de chargement de l\'image',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () async {
                             final url = Uri.parse(value);
                             if (await canLaunchUrl(url)) {
                               await launchUrl(
                                 url,
-                                mode: LaunchMode.externalApplication,
+                                mode:
+                                    LaunchMode.externalApplication,
                               );
                             }
                           },
-                          icon: const Icon(Icons.fullscreen),
-                          label: const Text('Voir en plein écran'),
                         ),
-                        const SizedBox(height: 8),
-                        _isPdfFile(value)
-                            ? Container(
-                              height: 200,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.picture_as_pdf,
-                                      size: 64,
-                                      color: Colors.red.shade400,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    const Text(
-                                      'Document PDF',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'Cliquez sur "Voir en plein écran" pour ouvrir',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                            : Stack(
-                              children: [
-                                Container(
-                                  height: 200,
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: Colors.grey.shade300,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      value,
-                                      fit: BoxFit.contain,
-                                      loadingBuilder: (
-                                        context,
-                                        child,
-                                        loadingProgress,
-                                      ) {
-                                        if (loadingProgress == null)
-                                          return child;
-                                        return Center(
-                                          child: CircularProgressIndicator(
-                                            value:
-                                                loadingProgress
-                                                            .expectedTotalBytes !=
-                                                        null
-                                                    ? loadingProgress
-                                                            .cumulativeBytesLoaded /
-                                                        loadingProgress
-                                                            .expectedTotalBytes!
-                                                    : null,
-                                          ),
-                                        );
-                                      },
-                                      errorBuilder: (
-                                        context,
-                                        error,
-                                        stackTrace,
-                                      ) {
-                                        return Center(
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.error_outline,
-                                                size: 48,
-                                                color: Colors.red.shade400,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              const Text(
-                                                'Erreur de chargement de l\'image',
-                                                style: TextStyle(
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
-                                Positioned.fill(
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(8),
-                                      onTap: () async {
-                                        final url = Uri.parse(value);
-                                        if (await canLaunchUrl(url)) {
-                                          await launchUrl(
-                                            url,
-                                            mode:
-                                                LaunchMode.externalApplication,
-                                          );
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                      ],
-                    )
-                    : Text(value),
-          ),
-        ],
-      ),
-    );
+                      ),
+                    ),
+                  ],
+                ),
+          ],
+        ),
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 140,
+              child: Text(
+                '$label:',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(child: Text(value)),
+          ],
+        ),
+      );
+    }
   }
 
   bool _isPdfFile(String url) {

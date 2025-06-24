@@ -59,7 +59,6 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
         withAuth: true,
       );
       
-      // Récupération des revenus des 7 derniers jours
       final DateTime now = DateTime.now();
       final DateTime sevenDaysAgo = now.subtract(const Duration(days: 7));
       
@@ -73,7 +72,6 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
         },
       );
       
-      // Récupération du top 3 des créateurs
       final topCreatorsResponse = await ApiService().request(
         method: 'GET',
         endpoint: '/subscriptions/top-creators',
@@ -84,10 +82,8 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
         setState(() {
           _roleStats = Map<String, int>.from(roleResponse.data);
           _genderStats = Map<String, int>.from(genderResponse.data);
-          // L'API retourne le montant en centimes, donc on divise par 100 pour avoir en euros
           _last7DaysRevenue = (revenueResponse.data['total'] as int) ~/ 100;
           
-          // Traitement du top 3 des créateurs
           if (topCreatorsResponse.success && topCreatorsResponse.data is List) {
             _topCreators = (topCreatorsResponse.data as List)
                 .map((item) => TopCreator.fromJson(item as Map<String, dynamic>))
@@ -116,6 +112,9 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
+
+    final bool isSmallScreen = MediaQuery.of(context).size.width < 900;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -130,16 +129,25 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
           const SizedBox(height: 24),
           _buildRevenueCard(),
           const SizedBox(height: 24),
-          _buildRoleCards(),
+          _buildRoleCards(isSmallScreen),
           const SizedBox(height: 32),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: _buildRoleChart()),
-              const SizedBox(width: 24),
-              Expanded(child: _buildGenderChart()),
-            ],
-          ),
+          if (isSmallScreen)
+            Column(
+              children: [
+                _buildRoleChart(),
+                const SizedBox(height: 24),
+                _buildGenderChart(),
+              ],
+            )
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: _buildRoleChart()),
+                const SizedBox(width: 24),
+                Expanded(child: _buildGenderChart()),
+              ],
+            ),
           const SizedBox(height: 32),
           _buildTopCreatorsSection(),
         ],
@@ -317,40 +325,70 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
     );
   }
 
-  Widget _buildRoleCards() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
+  Widget _buildRoleCards(bool isSmallScreen) {
+    if (isSmallScreen) {
+      return Column(
+        children: [
+          _buildStatCard(
             'Utilisateurs',
             _roleStats['USER'] ?? 0,
             Icons.person_outline,
             Colors.blue.shade100,
             Colors.blue,
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildStatCard(
+          const SizedBox(height: 16),
+          _buildStatCard(
             'Administrateurs',
             _roleStats['ADMIN'] ?? 0,
             Icons.admin_panel_settings_outlined,
             Colors.red.shade100,
             Colors.red,
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildStatCard(
+          const SizedBox(height: 16),
+          _buildStatCard(
             'Créateurs',
             _roleStats['CONTENT_CREATOR'] ?? 0,
             Icons.create_outlined,
             Colors.green.shade100,
             Colors.green,
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    } else {
+      return Row(
+        children: [
+          Expanded(
+            child: _buildStatCard(
+              'Utilisateurs',
+              _roleStats['USER'] ?? 0,
+              Icons.person_outline,
+              Colors.blue.shade100,
+              Colors.blue,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildStatCard(
+              'Administrateurs',
+              _roleStats['ADMIN'] ?? 0,
+              Icons.admin_panel_settings_outlined,
+              Colors.red.shade100,
+              Colors.red,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildStatCard(
+              'Créateurs',
+              _roleStats['CONTENT_CREATOR'] ?? 0,
+              Icons.create_outlined,
+              Colors.green.shade100,
+              Colors.green,
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildStatCard(String title, int value, IconData icon, Color bgColor, Color color) {
@@ -415,6 +453,8 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
   }
 
   Widget _buildChartContainer(String title, List<ChartData> data) {
+    final bool isSmallScreen = MediaQuery.of(context).size.width < 900;
+    
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -440,12 +480,11 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
             ),
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            height: 200,
-            child: Row(
+          if (isSmallScreen)
+            Column(
               children: [
-                Expanded(
-                  flex: 2,
+                SizedBox(
+                  height: 200,
                   child: PieChart(
                     PieChartData(
                       sectionsSpace: 2,
@@ -454,16 +493,37 @@ class _AdminKpiDashboardState extends State<AdminKpiDashboard> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 24),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: data.map((item) => _buildLegendItem(item)).toList(),
-                  ),
+                const SizedBox(height: 16),
+                Column(
+                  children: data.map((item) => _buildLegendItem(item)).toList(),
                 ),
               ],
+            )
+          else
+            SizedBox(
+              height: 200,
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: PieChart(
+                      PieChartData(
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 30,
+                        sections: data.map((item) => item.toPieChartSection()).toList(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: data.map((item) => _buildLegendItem(item)).toList(),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

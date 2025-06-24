@@ -102,27 +102,51 @@ class _ContactManagementState extends State<ContactManagement> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isSmallScreen = MediaQuery.of(context).size.width < 900;
+
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Gestion des contacts",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              ElevatedButton.icon(
-                onPressed: _fetchContacts,
-                icon: Icon(
-                  _loadingContacts ? Icons.hourglass_empty : Icons.refresh,
+          if (isSmallScreen)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Gestion des contacts",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
-                label: Text(_loadingContacts ? "Chargement..." : "Actualiser"),
-              ),
-            ],
-          ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _fetchContacts,
+                    icon: Icon(
+                      _loadingContacts ? Icons.hourglass_empty : Icons.refresh,
+                    ),
+                    label: Text(_loadingContacts ? "Chargement..." : "Actualiser"),
+                  ),
+                ),
+              ],
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Gestion des contacts",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _fetchContacts,
+                  icon: Icon(
+                    _loadingContacts ? Icons.hourglass_empty : Icons.refresh,
+                  ),
+                  label: Text(_loadingContacts ? "Chargement..." : "Actualiser"),
+                ),
+              ],
+            ),
           const SizedBox(height: 24),
           Expanded(
             child:
@@ -188,21 +212,37 @@ class _ContactManagementState extends State<ContactManagement> {
                                 Text(
                                   contact['email'] ?? 'Email non disponible',
                                 ),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        contact['subject'] ?? 'Pas de sujet',
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                isSmallScreen
+                                    ? Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            contact['subject'] ?? 'Pas de sujet',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          _buildStatusBadge(contact),
+                                        ],
+                                      )
+                                    : Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              contact['subject'] ?? 'Pas de sujet',
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          _buildStatusBadge(contact),
+                                        ],
                                       ),
-                                    ),
-                                    _buildStatusBadge(contact),
-                                  ],
-                                ),
                               ],
                             ),
                             children: [
@@ -214,50 +254,79 @@ class _ContactManagementState extends State<ContactManagement> {
                                     _buildDetailRow(
                                       'ID',
                                       contact['id']?.toString() ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'Prénom',
                                       contact['firstName'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'Nom',
                                       contact['lastName'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'Email',
                                       contact['email'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
                                     _buildDetailRow(
                                       'Sujet',
                                       contact['subject'] ?? 'N/A',
+                                      isSmallScreen,
                                     ),
-                                    Row(
-                                      children: [
-                                        SizedBox(
-                                          width: 120,
-                                          child: Text(
-                                            'Statut:',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                    isSmallScreen
+                                        ? Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Statut:',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                statusFrench,
+                                                style: TextStyle(
+                                                  color: statusColor,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : Row(
+                                            children: [
+                                              SizedBox(
+                                                width: 120,
+                                                child: Text(
+                                                  'Statut:',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: Text(
+                                                  statusFrench,
+                                                  style: TextStyle(
+                                                    color: statusColor,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            statusFrench,
-                                            style: TextStyle(
-                                              color: statusColor,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    const Text(
+                                    const SizedBox(height: 16),
+                                    Text(
                                       'Message:',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
+                                        fontSize: isSmallScreen ? 12 : 14,
+                                        color: isSmallScreen ? Colors.grey : null,
                                       ),
                                     ),
                                     Container(
@@ -277,6 +346,7 @@ class _ContactManagementState extends State<ContactManagement> {
                                       DateFormatter.formatDateTime(
                                         contact['submittedAt'],
                                       ),
+                                      isSmallScreen,
                                     ),
                                     if (contact['createdAt'] != null)
                                       _buildDetailRow(
@@ -284,6 +354,7 @@ class _ContactManagementState extends State<ContactManagement> {
                                         DateFormatter.formatDateTime(
                                           contact['createdAt'],
                                         ),
+                                        isSmallScreen,
                                       ),
                                     if (contact['updatedAt'] != null)
                                       _buildDetailRow(
@@ -291,6 +362,7 @@ class _ContactManagementState extends State<ContactManagement> {
                                         DateFormatter.formatDateTime(
                                           contact['updatedAt'],
                                         ),
+                                        isSmallScreen,
                                       ),
                                   ],
                                 ),
@@ -306,34 +378,62 @@ class _ContactManagementState extends State<ContactManagement> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {Color? valueColor}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+  Widget _buildDetailRow(String label, String value, bool isSmallScreen, {Color? valueColor}) {
+    if (isSmallScreen) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.grey,
+              ),
             ),
-          ),
-          Expanded(
-            child: Text(
+            const SizedBox(height: 4),
+            Text(
               value,
-              style:
-                  valueColor != null
-                      ? TextStyle(
+              style: valueColor != null
+                  ? TextStyle(
+                      color: valueColor,
+                      fontWeight: FontWeight.bold,
+                    )
+                  : null,
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text(
+                '$label:',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                value,
+                style: valueColor != null
+                    ? TextStyle(
                         color: valueColor,
                         fontWeight: FontWeight.bold,
                       )
-                      : null,
+                    : null,
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    }
   }
 
   Future<void> _fetchContacts() async {
