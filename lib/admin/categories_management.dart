@@ -49,36 +49,69 @@ class _CategoriesManagementState extends State<CategoriesManagement> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isSmallScreen = MediaQuery.of(context).size.width < 900;
+
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Gestion des catégories",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return CategoryCreateDialog(
-                        onCategoryCreated: () {
-                          _fetchCategories();
+          if (isSmallScreen)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Gestion des catégories",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return CategoryCreateDialog(
+                            onCategoryCreated: () {
+                              _fetchCategories();
+                            },
+                          );
                         },
                       );
                     },
-                  );
-                },
-                icon: const Icon(Icons.add),
-                label: const Text("Nouvelle catégorie"),
-              ),
-            ],
-          ),
+                    icon: const Icon(Icons.add),
+                    label: const Text("Nouvelle catégorie"),
+                  ),
+                ),
+              ],
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Gestion des catégories",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return CategoryCreateDialog(
+                          onCategoryCreated: () {
+                            _fetchCategories();
+                          },
+                        );
+                      },
+                    );
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text("Nouvelle catégorie"),
+                ),
+              ],
+            ),
           const SizedBox(height: 24),
           Expanded(
             child: _loadingCategories
@@ -144,49 +177,92 @@ class _CategoriesManagementState extends State<CategoriesManagement> {
                                 ),
                               ),
                               subtitle: null,
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined),
-                                    onPressed: () {
-                                      _updateHandler.showUpdateDialog(category);
-                                    },
-                                    tooltip: 'Modifier',
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.delete_outline,
-                                      color: Colors.red,
+                              trailing: isSmallScreen
+                                  ? IconButton(
+                                      icon: const Icon(Icons.more_vert),
+                                      onPressed: () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          builder: (context) {
+                                            return SafeArea(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  ListTile(
+                                                    leading: const Icon(Icons.edit_outlined),
+                                                    title: const Text('Modifier'),
+                                                    onTap: () {
+                                                      Navigator.pop(context);
+                                                      _updateHandler.showUpdateDialog(category);
+                                                    },
+                                                  ),
+                                                  ListTile(
+                                                    leading: const Icon(
+                                                      Icons.delete_outline,
+                                                      color: Colors.red,
+                                                    ),
+                                                    title: const Text(
+                                                      'Supprimer',
+                                                      style: TextStyle(color: Colors.red),
+                                                    ),
+                                                    onTap: () {
+                                                      Navigator.pop(context);
+                                                      _deleteHandler.showDeleteDialog(category);
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      },
+                                    )
+                                  : Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit_outlined),
+                                          onPressed: () {
+                                            _updateHandler.showUpdateDialog(category);
+                                          },
+                                          tooltip: 'Modifier',
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red,
+                                          ),
+                                          onPressed: () {
+                                            _deleteHandler.showDeleteDialog(category);
+                                          },
+                                          tooltip: 'Supprimer',
+                                        ),
+                                      ],
                                     ),
-                                    onPressed: () {
-                                      _deleteHandler.showDeleteDialog(category);
-                                    },
-                                    tooltip: 'Supprimer',
-                                  ),
-                                ],
-                              ),
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _buildDetailRow('ID', category['id'] ?? 'N/A'),
-                                      _buildDetailRow('Nom', category['name'] ?? 'N/A'),
+                                      _buildDetailRow('ID', category['id'] ?? 'N/A', isSmallScreen),
+                                      _buildDetailRow('Nom', category['name'] ?? 'N/A', isSmallScreen),
                                       if (category['pictureUrl'] != null)
                                         _buildDetailRow(
                                           'Image',
                                           category['pictureUrl'],
+                                          isSmallScreen,
                                           isImage: true,
                                         ),
                                       _buildDetailRow(
                                         'Créé le',
                                         DateFormatter.formatDateTime(category['createdAt']),
+                                        isSmallScreen,
                                       ),
                                       _buildDetailRow(
                                         'Mis à jour le',
                                         DateFormatter.formatDateTime(category['updatedAt']),
+                                        isSmallScreen,
                                       ),
                                     ],
                                   ),
@@ -202,111 +278,155 @@ class _CategoriesManagementState extends State<CategoriesManagement> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isImage = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+  Widget _buildDetailRow(String label, String value, bool isSmallScreen, {bool isImage = false}) {
+    if (isSmallScreen && !isImage) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.grey,
+              ),
             ),
-          ),
-          Expanded(
-            child: isImage && value != 'N/A'
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextButton.icon(
-                        onPressed: () async {
-                          final url = Uri.parse(value);
-                          if (await canLaunchUrl(url)) {
-                            await launchUrl(
-                              url,
-                              mode: LaunchMode.externalApplication,
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.fullscreen),
-                        label: const Text('Voir en plein écran'),
-                      ),
-                      const SizedBox(height: 8),
-                      Stack(
-                        children: [
-                          Container(
-                            height: 200,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade300),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                value,
-                                fit: BoxFit.contain,
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Center(
-                                    child: CircularProgressIndicator(
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded /
-                                              loadingProgress.expectedTotalBytes!
-                                          : null,
-                                    ),
-                                  );
-                                },
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Center(
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.error_outline,
-                                          size: 48,
-                                          color: Colors.red.shade400,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        const Text(
-                                          'Erreur de chargement de l\'image',
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
+            const SizedBox(height: 4),
+            Text(value),
+          ],
+        ),
+      );
+    } else if (isImage && value != 'N/A') {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isSmallScreen)
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              )
+            else
+              Row(
+                children: [
+                  SizedBox(
+                    width: 120,
+                    child: Text(
+                      '$label:',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () async {
+                final url = Uri.parse(value);
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(
+                    url,
+                    mode: LaunchMode.externalApplication,
+                  );
+                }
+              },
+              icon: const Icon(Icons.fullscreen),
+              label: const Text('Voir en plein écran'),
+            ),
+            const SizedBox(height: 8),
+            Stack(
+              children: [
+                Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      value,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
                           ),
-                          Positioned.fill(
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(8),
-                                onTap: () async {
-                                  final url = Uri.parse(value);
-                                  if (await canLaunchUrl(url)) {
-                                    await launchUrl(
-                                      url,
-                                      mode: LaunchMode.externalApplication,
-                                    );
-                                  }
-                                },
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 48,
+                                color: Colors.red.shade400,
                               ),
-                            ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Erreur de chargement de l\'image',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ],
-                  )
-                : Text(value),
-          ),
-        ],
-      ),
-    );
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () async {
+                        final url = Uri.parse(value);
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(
+                            url,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text(
+                '$label:',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(child: Text(value)),
+          ],
+        ),
+      );
+    }
   }
 
   Future<void> _fetchCategories() async {
