@@ -88,7 +88,6 @@ class _PostsChartState extends State<PostsChart> {
         throw Exception(response.error ?? 'Échec de la récupération des statistiques de posts');
       }
 
-      // Vérifier si les données sont nulles
       if (response.data == null) {
         setState(() {
           _totalPosts = 0;
@@ -101,7 +100,6 @@ class _PostsChartState extends State<PostsChart> {
 
       final int totalPosts = (response.data['total'] as int?) ?? 0;
       
-      // Traiter les données journalières
       final List<dynamic> dailyDataRaw = response.data['daily_data'] as List<dynamic>? ?? [];
       final List<PostData> postsData = [];
       
@@ -117,7 +115,6 @@ class _PostsChartState extends State<PostsChart> {
         ));
       }
 
-      // Traiter les données par catégorie
       final List<dynamic> categoryDataRaw = response.data['category_data'] as List<dynamic>? ?? [];
       final List<CategoryData> categoryData = [];
       
@@ -135,7 +132,6 @@ class _PostsChartState extends State<PostsChart> {
         ));
       }
 
-      // Ajouter des jours sans posts pour compléter le graphique
       final List<PostData> completeData = _fillMissingDates(_startDate, _endDate, postsData);
 
       setState(() {
@@ -157,22 +153,18 @@ class _PostsChartState extends State<PostsChart> {
     final List<PostData> result = [];
     final Map<String, PostData> existingDataMap = {};
     
-    // Créer un map des données existantes pour faciliter la recherche
     for (var data in existingData) {
       final String dateKey = DateFormat('yyyy-MM-dd').format(data.date);
       existingDataMap[dateKey] = data;
     }
     
-    // Ajouter une entrée pour chaque jour de la période
     for (int i = 0; i <= end.difference(start).inDays; i++) {
       final DateTime currentDate = start.add(Duration(days: i));
       final String dateKey = DateFormat('yyyy-MM-dd').format(currentDate);
       
       if (existingDataMap.containsKey(dateKey)) {
-        // Utiliser les données existantes
         result.add(existingDataMap[dateKey]!);
       } else {
-        // Créer une entrée avec compteur 0
         result.add(PostData(
           date: currentDate,
           count: 0,
@@ -186,27 +178,45 @@ class _PostsChartState extends State<PostsChart> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isSmallScreen = MediaQuery.of(context).size.width < 900;
+    
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Statistiques des posts',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+            if (isSmallScreen)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Statistiques des posts',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                _buildDateRangeControls(),
-              ],
-            ),
+                  const SizedBox(height: 16),
+                  _buildDateRangeControls(isSmallScreen),
+                ],
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Statistiques des posts',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  _buildDateRangeControls(isSmallScreen),
+                ],
+              ),
             const SizedBox(height: 24),
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
@@ -222,9 +232,9 @@ class _PostsChartState extends State<PostsChart> {
                 children: [
                   _buildPostsDisplay(),
                   const SizedBox(height: 24),
-                  _buildPostsChart(),
+                  _buildPostsChart(isSmallScreen),
                   const SizedBox(height: 32),
-                  _buildCategoriesBarChart(),
+                  _buildCategoriesBarChart(isSmallScreen),
                 ],
               ),
           ],
@@ -233,51 +243,97 @@ class _PostsChartState extends State<PostsChart> {
     );
   }
 
-  Widget _buildDateRangeControls() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildDatePicker(
-          label: 'Date de début',
-          selectedDate: _startDate,
-          onDateSelected: (date) {
-            if (date != null && date.isBefore(_endDate)) {
-              setState(() {
-                _startDate = date;
-              });
-              _fetchPostsStatistics();
-            } else if (date != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('La date de début doit être avant la date de fin')),
-              );
-            }
-          },
-        ),
-        const SizedBox(width: 16),
-        _buildDatePicker(
-          label: 'Date de fin',
-          selectedDate: _endDate,
-          onDateSelected: (date) {
-            if (date != null && date.isAfter(_startDate)) {
-              setState(() {
-                _endDate = date;
-              });
-              _fetchPostsStatistics();
-            } else if (date != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('La date de fin doit être après la date de début')),
-              );
-            }
-          },
-        ),
-      ],
-    );
+  Widget _buildDateRangeControls(bool isSmallScreen) {
+    if (isSmallScreen) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildDatePicker(
+            label: 'Date de début',
+            selectedDate: _startDate,
+            onDateSelected: (date) {
+              if (date != null && date.isBefore(_endDate)) {
+                setState(() {
+                  _startDate = date;
+                });
+                _fetchPostsStatistics();
+              } else if (date != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('La date de début doit être avant la date de fin')),
+                );
+              }
+            },
+            isSmallScreen: isSmallScreen,
+          ),
+          const SizedBox(height: 12),
+          _buildDatePicker(
+            label: 'Date de fin',
+            selectedDate: _endDate,
+            onDateSelected: (date) {
+              if (date != null && date.isAfter(_startDate)) {
+                setState(() {
+                  _endDate = date;
+                });
+                _fetchPostsStatistics();
+              } else if (date != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('La date de fin doit être après la date de début')),
+                );
+              }
+            },
+            isSmallScreen: isSmallScreen,
+          ),
+        ],
+      );
+    } else {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildDatePicker(
+            label: 'Date de début',
+            selectedDate: _startDate,
+            onDateSelected: (date) {
+              if (date != null && date.isBefore(_endDate)) {
+                setState(() {
+                  _startDate = date;
+                });
+                _fetchPostsStatistics();
+              } else if (date != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('La date de début doit être avant la date de fin')),
+                );
+              }
+            },
+            isSmallScreen: isSmallScreen,
+          ),
+          const SizedBox(width: 16),
+          _buildDatePicker(
+            label: 'Date de fin',
+            selectedDate: _endDate,
+            onDateSelected: (date) {
+              if (date != null && date.isAfter(_startDate)) {
+                setState(() {
+                  _endDate = date;
+                });
+                _fetchPostsStatistics();
+              } else if (date != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('La date de fin doit être après la date de début')),
+                );
+              }
+            },
+            isSmallScreen: isSmallScreen,
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildDatePicker({
     required String label,
     required DateTime selectedDate,
     required Function(DateTime?) onDateSelected,
+    required bool isSmallScreen,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,6 +351,7 @@ class _PostsChartState extends State<PostsChart> {
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            width: isSmallScreen ? double.infinity : null,
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey),
               borderRadius: BorderRadius.circular(4),
@@ -340,7 +397,7 @@ class _PostsChartState extends State<PostsChart> {
     );
   }
 
-  Widget _buildPostsChart() {
+  Widget _buildPostsChart(bool isSmallScreen) {
     if (_postsData.isEmpty) {
       return const Center(
         child: Padding(
@@ -353,9 +410,9 @@ class _PostsChartState extends State<PostsChart> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 16.0, bottom: 8.0),
-          child: Text(
+        Padding(
+          padding: EdgeInsets.only(left: isSmallScreen ? 8.0 : 16.0, bottom: 8.0),
+          child: const Text(
             'Posts par jour',
             style: TextStyle(
               fontSize: 16,
@@ -364,7 +421,7 @@ class _PostsChartState extends State<PostsChart> {
           ),
         ),
         SizedBox(
-          height: 300,
+          height: isSmallScreen ? 250 : 300,
           child: LineChart(
             LineChartData(
               minY: 0,
@@ -376,7 +433,7 @@ class _PostsChartState extends State<PostsChart> {
               titlesData: FlTitlesData(
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
-                    showTitles: true,
+                    showTitles: !isSmallScreen,
                     reservedSize: 40,
                     getTitlesWidget: (value, meta) {
                       return Text(
@@ -395,17 +452,20 @@ class _PostsChartState extends State<PostsChart> {
                     reservedSize: 30,
                     getTitlesWidget: (value, meta) {
                       final int index = value.toInt();
-                      if (index >= 0 && index < _postsData.length && index % 5 == 0) {
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            _postsData[index].label,
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
+                      if (index >= 0 && index < _postsData.length) {
+                        int interval = isSmallScreen ? 7 : 5;
+                        if (index % interval == 0) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              _postsData[index].label,
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: isSmallScreen ? 10 : 12,
+                              ),
                             ),
-                          ),
-                        );
+                          );
+                        }
                       }
                       return const SizedBox.shrink();
                     },
@@ -429,9 +489,9 @@ class _PostsChartState extends State<PostsChart> {
                   }).toList(),
                   isCurved: true,
                   color: Theme.of(context).primaryColor,
-                  barWidth: 3,
+                  barWidth: isSmallScreen ? 2 : 3,
                   isStrokeCapRound: true,
-                  dotData: const FlDotData(show: false),
+                  dotData: FlDotData(show: !isSmallScreen),
                   belowBarData: BarAreaData(
                     show: true,
                     color: Theme.of(context).primaryColor.withOpacity(0.2),
@@ -463,7 +523,7 @@ class _PostsChartState extends State<PostsChart> {
     );
   }
 
-  Widget _buildCategoriesBarChart() {
+  Widget _buildCategoriesBarChart(bool isSmallScreen) {
     if (_categoryData.isEmpty) {
       return const Center(
         child: Padding(
@@ -473,12 +533,19 @@ class _PostsChartState extends State<PostsChart> {
       );
     }
 
+    List<CategoryData> displayedCategories = _categoryData;
+    if (isSmallScreen && _categoryData.length > 5) {
+      displayedCategories = List.from(_categoryData)
+        ..sort((a, b) => b.count.compareTo(a.count))
+        ..take(5).toList();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 16.0, bottom: 16.0),
-          child: Text(
+        Padding(
+          padding: EdgeInsets.only(left: isSmallScreen ? 8.0 : 16.0, bottom: 16.0),
+          child: const Text(
             'Posts par catégorie',
             style: TextStyle(
               fontSize: 16,
@@ -487,9 +554,13 @@ class _PostsChartState extends State<PostsChart> {
           ),
         ),
         SizedBox(
-          height: 300,
+          height: isSmallScreen ? 250 : 300,
           child: Padding(
-            padding: const EdgeInsets.only(left: 16.0, right: 32.0, bottom: 16.0),
+            padding: EdgeInsets.only(
+              left: isSmallScreen ? 8.0 : 16.0, 
+              right: isSmallScreen ? 16.0 : 32.0, 
+              bottom: 16.0
+            ),
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
@@ -499,7 +570,7 @@ class _PostsChartState extends State<PostsChart> {
                   touchTooltipData: BarTouchTooltipData(
                     tooltipBgColor: Colors.blueGrey.shade800,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      final category = _categoryData[groupIndex];
+                      final category = displayedCategories[groupIndex];
                       return BarTooltipItem(
                         '${category.name}\n${category.count} posts',
                         const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -514,23 +585,23 @@ class _PostsChartState extends State<PostsChart> {
                       showTitles: true,
                       reservedSize: 40,
                       getTitlesWidget: (value, meta) {
-                        if (value < 0 || value >= _categoryData.length) {
+                        if (value < 0 || value >= displayedCategories.length) {
                           return const SizedBox.shrink();
                         }
                         
-                        // Limiter la longueur du texte pour éviter les débordements
-                        String categoryName = _categoryData[value.toInt()].name;
-                        if (categoryName.length > 10) {
-                          categoryName = categoryName.substring(0, 8) + '...';
+                        String categoryName = displayedCategories[value.toInt()].name;
+                        int maxLength = isSmallScreen ? 6 : 10;
+                        if (categoryName.length > maxLength) {
+                          categoryName = categoryName.substring(0, maxLength - 2) + '...';
                         }
                         
                         return Padding(
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
                             categoryName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.black87,
-                              fontSize: 11,
+                              fontSize: isSmallScreen ? 9 : 11,
                               fontWeight: FontWeight.w500,
                             ),
                             textAlign: TextAlign.center,
@@ -541,7 +612,7 @@ class _PostsChartState extends State<PostsChart> {
                   ),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
-                      showTitles: true,
+                      showTitles: !isSmallScreen,
                       reservedSize: 40,
                       getTitlesWidget: (value, meta) {
                         if (value == value.roundToDouble()) {
@@ -584,7 +655,7 @@ class _PostsChartState extends State<PostsChart> {
                     dashArray: [5, 5],
                   ),
                 ),
-                barGroups: _categoryData.asMap().entries.map((entry) {
+                barGroups: displayedCategories.asMap().entries.map((entry) {
                   final index = entry.key;
                   final category = entry.value;
                   return BarChartGroupData(
@@ -593,7 +664,7 @@ class _PostsChartState extends State<PostsChart> {
                       BarChartRodData(
                         toY: category.count.toDouble(),
                         color: category.color,
-                        width: 25,
+                        width: isSmallScreen ? 15 : 25,
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(4),
                           topRight: Radius.circular(4),
@@ -612,13 +683,12 @@ class _PostsChartState extends State<PostsChart> {
             ),
           ),
         ),
-        // Légende des catégories
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8.0 : 16.0, vertical: 8.0),
           child: Wrap(
-            spacing: 16.0,
+            spacing: isSmallScreen ? 8.0 : 16.0,
             runSpacing: 8.0,
-            children: _categoryData.map((cat) {
+            children: displayedCategories.map((cat) {
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -633,7 +703,7 @@ class _PostsChartState extends State<PostsChart> {
                   const SizedBox(width: 6),
                   Text(
                     '${cat.name} (${cat.count})',
-                    style: const TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: isSmallScreen ? 10 : 12),
                   ),
                 ],
               );
@@ -649,7 +719,6 @@ class _PostsChartState extends State<PostsChart> {
     
     int maxCount = _postsData.fold(0, (prev, curr) => max(prev, curr.count));
     
-    // Ajouter un peu d'espace au-dessus du maximum
     return (maxCount + (maxCount * 0.2)).ceilToDouble();
   }
 

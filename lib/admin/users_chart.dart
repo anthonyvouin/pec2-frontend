@@ -61,7 +61,6 @@ class _UserStatsChartState extends State<UserStatsChart> {
         throw Exception(response.error ?? 'Échec de la récupération des statistiques');
       }
 
-      // Vérifier si les données sont nulles
       if (response.data == null) {
         setState(() {
           _totalUsers = 0;
@@ -73,7 +72,6 @@ class _UserStatsChartState extends State<UserStatsChart> {
 
       final int totalUsers = (response.data['total'] as int?) ?? 0;
       
-      // Traiter les données journalières
       final List<dynamic> dailyDataRaw = response.data['daily_data'] as List<dynamic>? ?? [];
       final List<UserData> userData = [];
       
@@ -89,7 +87,6 @@ class _UserStatsChartState extends State<UserStatsChart> {
         ));
       }
 
-      // Ajouter des jours sans utilisateurs pour compléter le graphique
       final List<UserData> completeData = _fillMissingDates(_startDate, _endDate, userData);
 
       setState(() {
@@ -110,22 +107,18 @@ class _UserStatsChartState extends State<UserStatsChart> {
     final List<UserData> result = [];
     final Map<String, UserData> existingDataMap = {};
     
-    // Créer un map des données existantes pour faciliter la recherche
     for (var data in existingData) {
       final String dateKey = DateFormat('yyyy-MM-dd').format(data.date);
       existingDataMap[dateKey] = data;
     }
     
-    // Ajouter une entrée pour chaque jour de la période
     for (int i = 0; i <= end.difference(start).inDays; i++) {
       final DateTime currentDate = start.add(Duration(days: i));
       final String dateKey = DateFormat('yyyy-MM-dd').format(currentDate);
       
       if (existingDataMap.containsKey(dateKey)) {
-        // Utiliser les données existantes
         result.add(existingDataMap[dateKey]!);
       } else {
-        // Créer une entrée avec count 0
         result.add(UserData(
           date: currentDate,
           count: 0,
@@ -139,6 +132,8 @@ class _UserStatsChartState extends State<UserStatsChart> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isSmallScreen = MediaQuery.of(context).size.width < 900;
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -147,19 +142,35 @@ class _UserStatsChartState extends State<UserStatsChart> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Statistiques des inscriptions',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+            if (isSmallScreen)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Statistiques des inscriptions',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                _buildDateRangeControls(),
-              ],
-            ),
+                  const SizedBox(height: 16),
+                  _buildDateRangeControls(isSmallScreen),
+                ],
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Statistiques des inscriptions',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  _buildDateRangeControls(isSmallScreen),
+                ],
+              ),
             const SizedBox(height: 24),
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
@@ -175,7 +186,7 @@ class _UserStatsChartState extends State<UserStatsChart> {
                 children: [
                   _buildUserDisplay(),
                   const SizedBox(height: 24),
-                  _buildUserChart(),
+                  _buildUserChart(isSmallScreen),
                 ],
               ),
           ],
@@ -218,7 +229,7 @@ class _UserStatsChartState extends State<UserStatsChart> {
     );
   }
 
-  Widget _buildUserChart() {
+  Widget _buildUserChart(bool isSmallScreen) {
     if (_userData.isEmpty) {
       return const Center(
         child: Padding(
@@ -229,14 +240,22 @@ class _UserStatsChartState extends State<UserStatsChart> {
     }
 
     return SizedBox(
-      height: 300,
+      height: isSmallScreen ? 250 : 300,
       child: LineChart(
         LineChartData(
           minY: 0,
           minX: 0,
           maxX: (_userData.length - 1).toDouble(),
           maxY: _getMaxY(),
-          gridData: const FlGridData(show: true),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: !isSmallScreen, 
+            getDrawingHorizontalLine: (value) => FlLine(
+              color: Colors.grey.shade200,
+              strokeWidth: 1,
+              dashArray: [5, 5],
+            ),
+          ),
           clipData: const FlClipData.all(),
           lineTouchData: LineTouchData(
             enabled: true,
@@ -270,7 +289,17 @@ class _UserStatsChartState extends State<UserStatsChart> {
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) {
                   if (value >= 0 && value == value.roundToDouble()) {
-                    return Text(value.toInt().toString());
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Text(
+                        value.toInt().toString(),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                        ),
+                        textAlign: TextAlign.right,
+                      ),
+                    );
                   }
                   return const Text('');
                 },
@@ -287,9 +316,10 @@ class _UserStatsChartState extends State<UserStatsChart> {
                     return const Text('');
                   }
 
-                  // Afficher seulement certaines dates pour éviter l'encombrement
                   final int daysTotal = _userData.length;
-                  int interval = (daysTotal / 6).ceil(); // Environ 6 étiquettes
+                  int interval = isSmallScreen 
+                      ? (daysTotal / 4).ceil() 
+                      : (daysTotal / 6).ceil(); 
                   interval = max(1, interval);
                   
                   if (index % interval == 0 || index == _userData.length - 1) {
@@ -300,6 +330,7 @@ class _UserStatsChartState extends State<UserStatsChart> {
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w500,
+                          color: Colors.grey,
                         ),
                       ),
                     );
@@ -332,7 +363,25 @@ class _UserStatsChartState extends State<UserStatsChart> {
               preventCurveOverShooting: true,
               color: const Color(0xFF6C3FFE),
               barWidth: 3,
-              dotData: const FlDotData(show: true),
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, percent, barData, index) {
+                  if (_userData[index].count > 0) {
+                    return FlDotCirclePainter(
+                      radius: 4,
+                      color: const Color(0xFF6C3FFE),
+                      strokeWidth: 2,
+                      strokeColor: Colors.white,
+                    );
+                  }
+                  return FlDotCirclePainter(
+                    radius: 0,
+                    color: Colors.transparent,
+                    strokeWidth: 0,
+                    strokeColor: Colors.transparent,
+                  );
+                },
+              ),
               belowBarData: BarAreaData(
                 show: true,
                 color: const Color(0xFF6C3FFE).withOpacity(0.2),
@@ -356,49 +405,89 @@ class _UserStatsChartState extends State<UserStatsChart> {
       }
     }
     
-    // Ajouter un peu d'espace au-dessus de la valeur maximale
     return maxValue > 0 ? maxValue * 1.2 : 10;
   }
 
-  Widget _buildDateRangeControls() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildDatePicker(
-          label: 'Date de début',
-          selectedDate: _startDate,
-          onDateSelected: (date) {
-            if (date != null && date.isBefore(_endDate)) {
-              setState(() {
-                _startDate = date;
-              });
-              _fetchStats();
-            } else if (date != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('La date de début doit être avant la date de fin')),
-              );
-            }
-          },
-        ),
-        const SizedBox(width: 16),
-        _buildDatePicker(
-          label: 'Date de fin',
-          selectedDate: _endDate,
-          onDateSelected: (date) {
-            if (date != null && date.isAfter(_startDate)) {
-              setState(() {
-                _endDate = date;
-              });
-              _fetchStats();
-            } else if (date != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('La date de fin doit être après la date de début')),
-              );
-            }
-          },
-        ),
-      ],
-    );
+  Widget _buildDateRangeControls(bool isSmallScreen) {
+    if (isSmallScreen) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDatePicker(
+            label: 'Date de début',
+            selectedDate: _startDate,
+            onDateSelected: (date) {
+              if (date != null && date.isBefore(_endDate)) {
+                setState(() {
+                  _startDate = date;
+                });
+                _fetchStats();
+              } else if (date != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('La date de début doit être avant la date de fin')),
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+          _buildDatePicker(
+            label: 'Date de fin',
+            selectedDate: _endDate,
+            onDateSelected: (date) {
+              if (date != null && date.isAfter(_startDate)) {
+                setState(() {
+                  _endDate = date;
+                });
+                _fetchStats();
+              } else if (date != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('La date de fin doit être après la date de début')),
+                );
+              }
+            },
+          ),
+        ],
+      );
+    } else {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildDatePicker(
+            label: 'Date de début',
+            selectedDate: _startDate,
+            onDateSelected: (date) {
+              if (date != null && date.isBefore(_endDate)) {
+                setState(() {
+                  _startDate = date;
+                });
+                _fetchStats();
+              } else if (date != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('La date de début doit être avant la date de fin')),
+                );
+              }
+            },
+          ),
+          const SizedBox(width: 16),
+          _buildDatePicker(
+            label: 'Date de fin',
+            selectedDate: _endDate,
+            onDateSelected: (date) {
+              if (date != null && date.isAfter(_startDate)) {
+                setState(() {
+                  _endDate = date;
+                });
+                _fetchStats();
+              } else if (date != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('La date de fin doit être après la date de début')),
+                );
+              }
+            },
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildDatePicker({
