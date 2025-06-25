@@ -236,6 +236,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
         actions:
             widget.isCurrentUser
                 ? [
+                  if(_user != null && _user!.role == 'CONTENT_CREATOR')
                   IconButton(
                     onPressed: () => context.goNamed("statistic-creator"),
                     icon: const Icon(Icons.timeline),

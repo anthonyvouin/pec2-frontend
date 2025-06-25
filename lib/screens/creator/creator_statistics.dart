@@ -1,61 +1,39 @@
-import 'package:firstflutterapp/components/graph/pie_chart_graph.dart';
-import 'package:firstflutterapp/components/subscriber/subscriberList.dart';
-import 'package:firstflutterapp/components/title/title_onlyflick.dart';
-import 'package:firstflutterapp/interfaces/user_stats.dart';
-import 'package:firstflutterapp/services/api_service.dart';
-import 'package:firstflutterapp/services/toast_service.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:toastification/toastification.dart';
 
-class CreatorStatisticsView extends StatefulWidget {
-  const CreatorStatisticsView({super.key});
+import '../../components/graph/pie_chart_graph.dart';
+import '../../components/subscriber/subscriberList.dart' show SubscribersList;
+import '../../components/title/title_onlyflick.dart';
+import '../../interfaces/user_stats.dart';
+import '../../services/api_service.dart';
+import '../../services/toast_service.dart';
 
+class CreatorStatView extends StatefulWidget {
   @override
-  State<CreatorStatisticsView> createState() => _CreatorStatisticsViewState();
+  _CreatorStatViewState createState() => _CreatorStatViewState();
 }
 
-class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
+class _CreatorStatViewState extends State<CreatorStatView>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   String _selectedOption = '7 derniers jours';
   DateTimeRange? _selectedRange;
   bool _isLoading = false;
   final ApiService _apiService = ApiService();
   UserStats? _userStats;
+  String _selectedFollowOrSubscriber = 'Abonnés';
 
-  void _updateDateRange(String option) async {
-    DateTime now = DateTime.now();
+  @override
+  void initState() {
+    super.initState();
+    _getData();
+    _tabController = TabController(length: 2, vsync: this);
+  }
 
-    if (option == '7 derniers jours') {
-      DateTime end = DateTime(now.year, now.month, now.day);
-      DateTime start = end.subtract(Duration(days: 6)); // 7 jours au total
-      setState(() {
-        _selectedRange = DateTimeRange(start: start, end: end);
-      });
-      ;
-    } else if (option == 'Mois en cours') {
-      DateTime start = DateTime(now.year, now.month, 1);
-      DateTime end = DateTime(now.year, now.month + 1, 0);
-      setState(() {
-        _selectedRange = DateTimeRange(start: start, end: end);
-      });
-    } else if (option == 'Année en cours') {
-      DateTime start = DateTime(now.year, 1, 1);
-      DateTime end = DateTime(now.year, 12, 31);
-      setState(() {
-        _selectedRange = DateTimeRange(start: start, end: end);
-      });
-    } else if (option == 'Personnalisée') {
-      DateTimeRange? picked = await showDateRangePicker(
-        context: context,
-        firstDate: DateTime(2000),
-        lastDate: DateTime(2100),
-      );
-      if (picked != null) {
-        setState(() {
-          _selectedRange = picked;
-        });
-      }
-    }
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _getData() async {
@@ -64,7 +42,8 @@ class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
     });
     ApiResponse request = await _apiService.request(
       method: 'Get',
-      endpoint: '/content-creators/stats/creator',
+      endpoint:
+          '/content-creators/stats/creator?isSubscriberSearch=${_selectedFollowOrSubscriber == "Abonnés" ? true : false}',
     );
     if (request.success) {
       setState(() {
@@ -83,42 +62,6 @@ class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
     print(request);
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _updateDateRange(_selectedOption);
-    _getData();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    String displayRange =
-        _selectedRange == null
-            ? 'Aucune plage sélectionnée'
-            : '${DateFormat('dd MMMM yyyy', 'fr_FR').format(_selectedRange!.start)} '
-                '→ ${DateFormat('dd MMMM yyyy', 'fr_FR').format(_selectedRange!.end)}';
-
-    return Scaffold(
-      appBar: AppBar(title: Text("Statistiques")),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _periodSelector(displayRange),
-            const SizedBox(height: 16),
-            !_isLoading
-                ? (_userStats != null && _userStats!.subscriberLength > 0
-                    ? _firstLine()
-                    : const Text("Vous n'avez pas d'abonnés"))
-                : const Text("Chargement des données..."),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showSubscriberModal(BuildContext context, bool showSubscriber) async {
     await showModalBottomSheet(
       context: context,
@@ -131,11 +74,13 @@ class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
             initialIndex: 0,
             child: Column(
               children: [
-                const TabBar(tabs: [Tab(text: 'Abonnés')]),
+                TabBar(tabs: [Tab(text: _selectedFollowOrSubscriber)]),
                 Expanded(
                   child: TabBarView(
                     children: [
-                      SubscribersList(subscribers: _userStats!.subscribersOrFollowers),
+                      SubscribersList(
+                        subscribers: _userStats!.subscribersOrFollowers,
+                      ),
                     ],
                   ),
                 ),
@@ -147,63 +92,75 @@ class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
     );
   }
 
-  Widget _periodSelector(displayRange) {
-    return Center(
-      child: Wrap(
-        spacing: 16,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Statistiques')),
+      body: Column(
         children: [
-          DropdownButton<String>(
-            value: _selectedOption,
-            items:
-                <String>[
-                  '7 derniers jours',
-                  'Mois en cours',
-                  'Année en cours',
-                  'Personnalisée',
-                ].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                setState(() {
-                  _selectedOption = newValue;
-                });
-                _updateDateRange(newValue);
-              }
-            },
+          Container(
+            color: Colors.white,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: Theme.of(context).primaryColor,
+              unselectedLabelColor: Colors.black54,
+              indicatorColor: Theme.of(context).primaryColor,
+              tabs: const [Tab(text: 'Général'), Tab(text: 'Revenue')],
+            ),
           ),
-          SizedBox(width: 16),
-          Text(displayRange),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // Center(child: Text('Vue général')),
+                _generalStats(),
+                Center(child: Text('Vue revenue')),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // Widget _container (){
-  //   return
-  // }
+  Widget _content() {
+    if (_isLoading) {
+      return Text('Chargement des données');
+    }
 
-  Widget _firstLine() {
-    return Center(
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 16,
-        runSpacing: 16,
-        children: [
-          SizedBox(width: 300, child: _getSubscribers()),
-          SizedBox(width: 300, child: _genderGraph()),
-          SizedBox(width: 300, child: _subscriberAge()),
-        ],
-      ),
+    return Column(
+      children: [
+        Row(
+          children: [
+            DropdownButton<String>(
+              value: _selectedFollowOrSubscriber,
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedFollowOrSubscriber = newValue!;
+                });
+                _getData();
+              },
+              items:
+                  <String>[
+                    'Abonnés',
+                    'Followers',
+                  ].map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+            ),
+          ],
+        ),
+
+        SizedBox(height: 16),
+        _firstLine(),
+      ],
     );
   }
 
-  Widget _getSubscribers() {
+  Widget _getSubscribersOrFollowers() {
     return GestureDetector(
       onTap: () => _showSubscriberModal(context, true),
       child: Padding(
@@ -218,7 +175,10 @@ class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(height: 16),
-                    TitleOnlyFlick(text: 'Abonnés', fontSize: 20,),
+                    TitleOnlyFlick(
+                      text: _selectedFollowOrSubscriber,
+                      fontSize: 20,
+                    ),
                     SizedBox(height: 16),
                     Text(_userStats!.subscriberLength.toString()),
                   ],
@@ -239,7 +199,7 @@ class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(height: 16),
-            TitleOnlyFlick(text: 'Genres', fontSize: 20,),
+            TitleOnlyFlick(text: 'Genres', fontSize: 20),
             SizedBox(height: 16),
             SizedBox(
               height: 250,
@@ -259,7 +219,7 @@ class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(height: 16),
-            TitleOnlyFlick(text: 'Âges', fontSize: 20,),
+            TitleOnlyFlick(text: 'Âges', fontSize: 20),
             SizedBox(height: 16),
             SizedBox(
               height: 250,
@@ -311,6 +271,28 @@ class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _firstLine() {
+    return Center(
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 16,
+        runSpacing: 16,
+        children: [
+          SizedBox(width: 300, child: _getSubscribersOrFollowers()),
+          SizedBox(width: 300, child: _genderGraph()),
+          SizedBox(width: 300, child: _subscriberAge()),
+        ],
+      ),
+    );
+  }
+
+  Widget _generalStats() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(children: [_content()]),
     );
   }
 }

@@ -40,6 +40,8 @@ import 'package:firstflutterapp/screens/reset-password/confirm-reset-password.da
 import 'package:firstflutterapp/admin/revenue_chart_page.dart';
 import 'package:firstflutterapp/admin/posts_chart_page.dart';
 
+import '../screens/creator/creator_statistics.dart';
+
 const homeRoute = '/';
 const loginRoute = '/login';
 const uploadPhotoRoute = '/upload-photo';
@@ -170,7 +172,7 @@ final router = GoRouter(
             GoRoute(
               path: 'statistic-creator',
               name: 'statistic-creator',
-              builder: (context, state) => CreatorStatisticsView(),
+              builder: (context, state) => CreatorStatView(),
             ),
             GoRoute(
               path: 'params',
