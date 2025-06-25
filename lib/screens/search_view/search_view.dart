@@ -13,27 +13,26 @@ class SearchView extends StatefulWidget {
   State<SearchView> createState() => _SearchViewState();
 }
 
-class _SearchViewState extends PostsFeedViewBase<SearchView> {
-  @override
+class _SearchViewState extends PostsFeedViewBase<SearchView> {  @override
   String get viewTitle => 'Découvrir';
 
   @override
-  Color get badgeColor => Colors.green;
+  Color get badgeColor => Colors.transparent;
 
   @override
-  String get badgeText => 'Gratuit';
+  String get badgeText => '';
 
   @override
-  String get emptyStateTitle => 'Aucun post gratuit';
+  String get emptyStateTitle => 'Aucun post disponible';
 
   @override
-  String get emptyCategoryStateTitle => 'Aucun post gratuit dans cette catégorie';
+  String get emptyCategoryStateTitle => 'Aucun post dans cette catégorie';
 
   @override
-  String get emptyStateMessage => 'Aucun post gratuit disponible pour le moment';
+  String get emptyStateMessage => 'Aucun post disponible pour le moment';
 
   @override
-  String get emptyCategoryStateMessage => 'Essayez une autre catégorie pour voir des posts gratuits';
+  String get emptyCategoryStateMessage => 'Essayez une autre catégorie';
 
   @override
   IconData get emptyStateIcon => Icons.search_off;

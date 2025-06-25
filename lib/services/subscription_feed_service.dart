@@ -27,34 +27,36 @@ class SubscriptionFeedService {
 
     print('SubscriptionFeedService: Chargement des posts d\'abonnement avec paramètres: $queryParams');
 
-    final response = await _apiService.request(
-      method: 'get',
-      endpoint: '/posts',
-      withAuth: true, // L'authentification est nécessaire pour accéder aux posts d'abonnement
-      queryParams: queryParams,
-    );
-
-    if (response.success) {
-      print('SubscriptionFeedService: Réponse reçue avec succès');
-      print('SubscriptionFeedService: Type de données reçues: ${response.data.runtimeType}');
-      
-      // Log pour mieux comprendre la structure des données reçues
-      if (response.data is Map) {
-        print('SubscriptionFeedService: Structure de la réponse (Map): ${response.data.keys}');
-        if (response.data.containsKey('posts')) {
-          final posts = response.data['posts'] as List;
-          print('SubscriptionFeedService: Nombre de posts reçus: ${posts.length}');
-        }
-      } else if (response.data is List) {
-        final posts = response.data as List;
-        print('SubscriptionFeedService: Nombre de posts reçus (liste directe): ${posts.length}');
-      }
-      return PaginatedResponse<Post>.fromJson(
-        response.data,
-        (post) => Post.fromJson(post),
+    try {
+      final response = await _apiService.request(
+        method: 'get',
+        endpoint: '/posts',
+        withAuth: true,
+        queryParams: queryParams,
       );
-    }
 
-    throw Exception('Échec du chargement des posts d\'abonnement: ${response.error}');
+      if (response.success) {
+        
+        if (response.data is Map) {
+          if (response.data.containsKey('posts')) {
+            final posts = response.data['posts'] as List;
+          }
+        } else if (response.data is List) {
+          final posts = response.data as List;
+        }
+        
+        var paginatedResponse = PaginatedResponse<Post>.fromJson(
+          response.data,
+          (post) => Post.fromJson(post),
+        );
+
+        return paginatedResponse;
+      }
+
+      throw Exception('Échec du chargement des posts d\'abonnement: ${response.error}');
+    } catch (e) {
+      print('SubscriptionFeedService: Exception lors du chargement des posts: $e');
+      rethrow;
+    }
   }
 }

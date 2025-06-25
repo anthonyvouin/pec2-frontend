@@ -376,34 +376,15 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          decoration:
-                              TextDecoration
+                          decoration:                              TextDecoration
                                   .underline, // Indication visuelle que c'est cliquable
                         ),
                       ),
                     ),
                     const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: post.isFree ? Colors.green : Colors.red,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        post.isFree ? 'Gratuit' : 'Payant',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
-                const SizedBox(height: 8),                
+                const SizedBox(height: 8),
                 // Titre et description
                 Text(
                   post.name,
