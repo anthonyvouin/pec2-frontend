@@ -45,6 +45,16 @@ class MyApp extends StatelessWidget {
               ? ThemeMode.dark 
               : ThemeMode.light),
       routerConfig: router,
+      locale: const Locale('fr', 'FR'),
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('fr', 'FR'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
     );
   }
 }
