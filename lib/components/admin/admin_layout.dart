@@ -148,8 +148,7 @@ class SideMenu extends StatelessWidget {
                   _buildMenuItem(3, "Contacts", Icons.contact_mail),
                   _buildMenuItem(4, "Créateurs", Icons.group),
                   _buildMenuItem(5, "Catégories", Icons.category),
-                  _buildMenuItem(6, "Revenus", Icons.attach_money),
-                  _buildMenuItem(7, "Posts", Icons.post_add),
+           
                 ],
               ),
             ),

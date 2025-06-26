@@ -198,8 +198,9 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             initialIndex: showFollowers ? 1 : 0,
             child: Column(
               children: [
-                const TabBar(
-                  tabs: [Tab(text: 'Followings'), Tab(text: 'Followers')],
+                TabBar(
+                  labelColor: AppTheme.darkColor,
+                  tabs: const [Tab(text: 'Followings'), Tab(text: 'Followers')],
                 ),
                 Expanded(
                   child: TabBarView(
@@ -225,12 +226,14 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Profile",
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: Theme.of(context).brightness == Brightness.dark 
+                ? Colors.white 
+                : AppTheme.darkColor,
           ),
         ),
         actions:
@@ -239,7 +242,12 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                   if(_user != null && _user!.role == 'CONTENT_CREATOR')
                   IconButton(
                     onPressed: () => context.goNamed("statistic-creator"),
-                    icon: const Icon(Icons.timeline),
+                    icon: Icon(
+                      Icons.timeline,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.white 
+                          : AppTheme.darkColor,
+                    ),
                   ),
                   IconButton(
                     onPressed: () {
@@ -247,27 +255,46 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                         context.goNamed('edit-profile');
                       }
                     },
-                    icon: const Icon(Icons.edit),
+                    icon: Icon(
+                      Icons.edit,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.white 
+                          : AppTheme.darkColor,
+                    ),
                   ),
                   IconButton(
                     onPressed: () => context.goNamed("messages"),
-                    icon: const Icon(Icons.mail_outline),
+                    icon: Icon(
+                      Icons.mail_outline,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.white 
+                          : AppTheme.darkColor,
+                    ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.settings),
+                    icon: Icon(
+                      Icons.settings,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.white 
+                          : AppTheme.darkColor,
+                    ),
                     onPressed: () {
                       context.push(profileParams);
                     },
                   ),
                 ]
                 : [],
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
       ),
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.darkColor),
+                  ),
+                )
               : _buildProfileContent(),
     );
   }
@@ -330,7 +357,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
               style: TextStyle(
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
-                color: Colors.grey[700],
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -349,7 +376,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                 },
                 child: Icon(
                   Icons.border_all,
-                  color: isFree == true ? AppTheme.darkColor : Colors.black,
+                  color: isFree == true ? AppTheme.darkColor : Theme.of(context).iconTheme.color,
                 ),
               ),
               SizedBox(width: 16),
@@ -364,7 +391,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                   },
                   child: Icon(
                     Icons.paid,
-                    color: isFree == false ? AppTheme.darkColor : Colors.black,
+                    color: isFree == false ? AppTheme.darkColor : Theme.of(context).iconTheme.color,
                   ),
                 ),
             ],
@@ -391,7 +418,10 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
             ),
             Text(
               label,
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
+              style: TextStyle(
+                fontSize: 12, 
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+              ),
             ),
           ],
         ),
@@ -400,7 +430,11 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   }
 
   Widget _verticalDivider() {
-    return Container(height: 28, width: 1.2, color: Colors.grey[300]);
+    return Container(
+      height: 28, 
+      width: 1.2, 
+      color: Theme.of(context).dividerColor,
+    );
   }
 
   Widget _buildActionButtons() {
@@ -464,8 +498,58 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                   child: Text(_isSubscriber ? "Se désabonner" : "S'abonner"),
                 ),
               if (_subcriptionCanceled && _subscriptionCanceledAt != null)
-                Text(
-                  "Abonné jusqu'au ${DateFormat('dd/MM/yyyy').format(_subscriptionCanceledAt!)}",
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.darkColor.withOpacity(0.1),
+                        AppTheme.darkColor.withOpacity(0.05),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.darkColor.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.darkColor.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.darkColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.schedule,
+                          size: 18,
+                          color: AppTheme.darkColor,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        "Abonné jusqu'au ${DateFormat('dd/MM/yyyy').format(_subscriptionCanceledAt!)}",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.darkColor,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ),

@@ -39,7 +39,9 @@ class UserSettings {
 
 class UserSettingsService {
   final ApiService _apiService = ApiService();
-  static const String _endpoint = '/user-settings';  Future<ApiResponse<UserSettings>> getUserSettings() async {
+  static const String _endpoint = '/user-settings';  
+  
+  Future<ApiResponse<UserSettings>> getUserSettings() async {
     try {
       final response = await _apiService.request(
         method: 'GET',

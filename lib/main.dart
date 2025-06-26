@@ -1,6 +1,6 @@
-import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:firstflutterapp/notifiers/userNotififers.dart';
 import 'package:firstflutterapp/notifiers/sse_provider.dart';
+import 'package:firstflutterapp/notifiers/theme_notifier.dart';
 import 'package:firstflutterapp/theme.dart';
 import 'package:firstflutterapp/config/router.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +17,7 @@ Future<void> main() async {
     providers: [
       ChangeNotifierProvider(create: (_) => UserNotifier()),
       ChangeNotifierProvider(create: (_) => SSEProvider()),
+      ChangeNotifierProvider(create: (_) => ThemeNotifier()),
     ],
     child: const ToastificationWrapper(
       child: MyApp(),
@@ -31,29 +32,29 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AdaptiveTheme(
-      light: AppTheme.lightTheme,
-      dark: AppTheme.darkTheme,
-      initial: AdaptiveThemeMode.system,
-      builder: (theme, darkTheme) {
-        return MaterialApp.router(
-          debugShowCheckedModeBanner: false,
-          title: 'OnlyFlick',
-          theme: theme,
-          darkTheme: darkTheme,
-          routerConfig: router,
-          locale: const Locale('fr', 'FR'),
-          supportedLocales: const [
-            Locale('en', 'US'),
-            Locale('fr', 'FR'),
-          ],
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-        );
-      },
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    
+    return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
+      title: 'OnlyFlick',
+      theme: themeNotifier.lightTheme,
+      darkTheme: themeNotifier.darkTheme,
+      themeMode: themeNotifier.themeMode == AppThemeMode.system 
+          ? ThemeMode.system 
+          : (themeNotifier.themeMode == AppThemeMode.dark 
+              ? ThemeMode.dark 
+              : ThemeMode.light),
+      routerConfig: router,
+      locale: const Locale('fr', 'FR'),
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('fr', 'FR'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
     );
   }
 }

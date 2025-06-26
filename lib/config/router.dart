@@ -14,6 +14,7 @@ import 'package:firstflutterapp/screens/profile/other_profil_view.dart';
 import 'package:firstflutterapp/screens/profile/profil_view.dart';
 import 'package:firstflutterapp/screens/profile/setting-preferences/setting-preferences.dart';
 import 'package:firstflutterapp/screens/profile/setting-user/setting-user.dart';
+import 'package:firstflutterapp/screens/profile/subscriptions/user_subscriptions.dart';
 import 'package:firstflutterapp/screens/profile/update_profile/update_profile.dart';
 import 'package:firstflutterapp/screens/register/end-register.dart';
 import 'package:firstflutterapp/screens/register/register_view.dart';
@@ -37,8 +38,8 @@ import 'package:firstflutterapp/screens/message/message.dart';
 import 'package:firstflutterapp/admin/admin_kpi.dart';
 import 'package:firstflutterapp/screens/reset-password/request-reset-password.dart';
 import 'package:firstflutterapp/screens/reset-password/confirm-reset-password.dart';
-import 'package:firstflutterapp/admin/revenue_chart_page.dart';
-import 'package:firstflutterapp/admin/posts_chart_page.dart';
+
+import 'package:firstflutterapp/admin/statistics_page.dart';
 
 import '../screens/creator/creator_statistics.dart';
 
@@ -56,6 +57,7 @@ const editProfileRoute = '/profile/edit';
 const profileParams = '/profile/params';
 const profileUpdatePassword = '/profile/params/update-password';
 const profileSupport = '/profile/params/support';
+const profileSubscriptions = '/profile/params/subscriptions';
 const adminRoute = '/admin';
 const adminDashboard = '/admin/dashboard';
 const adminUsersManagement = '/admin/users';
@@ -64,6 +66,7 @@ const adminUsersChart = '/admin/users-chart';
 const adminContentCreator = '/admin/content-creator';
 const adminRevenueChart = '/admin/revenue-chart';
 const adminPostsChart = '/admin/posts-chart';
+const adminStatistics = '/admin/statistics';
 const profilePreferences = '/profile/params/preferences';
 const searchRoute = '/search';
 const messageRoute = '/message';
@@ -194,6 +197,11 @@ final router = GoRouter(
                   name: 'preferences',
                   builder: (context, state) => SettingPreferences(),
                 ),
+                GoRoute(
+                  path: 'subscriptions',
+                  name: 'subscriptions',
+                  builder: (context, state) => const UserSubscriptionsPage(),
+                ),
               ],
             ),
           ],
@@ -322,13 +330,10 @@ final router = GoRouter(
           builder: (context, state) => const CategoriesManagement(),
         ),
         GoRoute(
-          path: '$adminRoute/revenue-chart',
-          builder: (context, state) => const RevenueChartPage(),
+          path: '$adminRoute/statistics',
+          builder: (context, state) => const StatisticsPage(),
         ),
-        GoRoute(
-          path: '$adminRoute/posts-chart',
-          builder: (context, state) => const PostsChartPage(),
-        ),
+        
       ],
     ),
   ],

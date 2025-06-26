@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
+import 'package:firstflutterapp/components/subscription/subscription_required_widget.dart';
 
 import '../../interfaces/post.dart';
 import '../../notifiers/sse_provider.dart';
@@ -210,7 +211,7 @@ class _ProfileFeedState extends State<ProfileFeed> {
         },
       );
     } else {
-      return Text("Vous devez vous abonner");
+      return SubscriptionRequiredWidget();
     }
   }
 
