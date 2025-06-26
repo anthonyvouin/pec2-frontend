@@ -37,8 +37,8 @@ import 'package:firstflutterapp/screens/message/message.dart';
 import 'package:firstflutterapp/admin/admin_kpi.dart';
 import 'package:firstflutterapp/screens/reset-password/request-reset-password.dart';
 import 'package:firstflutterapp/screens/reset-password/confirm-reset-password.dart';
-import 'package:firstflutterapp/admin/revenue_chart_page.dart';
-import 'package:firstflutterapp/admin/posts_chart_page.dart';
+
+import 'package:firstflutterapp/admin/statistics_page.dart';
 
 const homeRoute = '/';
 const loginRoute = '/login';
@@ -62,6 +62,7 @@ const adminUsersChart = '/admin/users-chart';
 const adminContentCreator = '/admin/content-creator';
 const adminRevenueChart = '/admin/revenue-chart';
 const adminPostsChart = '/admin/posts-chart';
+const adminStatistics = '/admin/statistics';
 const profilePreferences = '/profile/params/preferences';
 const searchRoute = '/search';
 const messageRoute = '/message';
@@ -320,13 +321,10 @@ final router = GoRouter(
           builder: (context, state) => const CategoriesManagement(),
         ),
         GoRoute(
-          path: '$adminRoute/revenue-chart',
-          builder: (context, state) => const RevenueChartPage(),
+          path: '$adminRoute/statistics',
+          builder: (context, state) => const StatisticsPage(),
         ),
-        GoRoute(
-          path: '$adminRoute/posts-chart',
-          builder: (context, state) => const PostsChartPage(),
-        ),
+        
       ],
     ),
   ],

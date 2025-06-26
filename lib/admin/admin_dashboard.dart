@@ -20,13 +20,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   final List<String> _routes = [
     adminKpiDashboard,
-    adminUsersChart,
+    adminStatistics,
     adminUsersManagement,
     adminContacts,
     adminContentCreator,
     adminCategoriesManagement,
-    adminRevenueChart,
-    adminPostsChart,
+
   ];
 
   Future<void> _logout() async {
