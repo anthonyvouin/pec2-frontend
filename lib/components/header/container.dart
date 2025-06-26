@@ -1,4 +1,3 @@
-import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firstflutterapp/config/router.dart';
@@ -30,12 +29,6 @@ class _HeaderState extends State<Header> {
         ),
         Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              onPressed: () {
-                // Action pour les notifications
-              },
-            ),
             IconButton(
               icon: const Icon(Icons.send_outlined),
               onPressed: () {
