@@ -20,16 +20,25 @@ class RevenueData {
 }
 
 class RevenueChart extends StatefulWidget {
-  const RevenueChart({Key? key}) : super(key: key);
+  final DateTime? initialStartDate;
+  final DateTime? initialEndDate;
+  final bool showDateSelector;
+
+  const RevenueChart({
+    Key? key,
+    this.initialStartDate,
+    this.initialEndDate,
+    this.showDateSelector = true,
+  }) : super(key: key);
 
   @override
-  _RevenueChartState createState() => _RevenueChartState();
+  RevenueChartState createState() => RevenueChartState();
 }
 
-class _RevenueChartState extends State<RevenueChart> {
+class RevenueChartState extends State<RevenueChart> {
   bool _isLoading = false;
-  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
-  DateTime _endDate = DateTime.now();
+  late DateTime _startDate;
+  late DateTime _endDate;
   int _totalRevenue = 0;
   String _error = '';
   List<RevenueData> _revenueData = [];
@@ -38,7 +47,17 @@ class _RevenueChartState extends State<RevenueChart> {
   @override
   void initState() {
     super.initState();
+    _startDate = widget.initialStartDate ?? DateTime.now().subtract(const Duration(days: 30));
+    _endDate = widget.initialEndDate ?? DateTime.now();
     initializeDateFormatting('fr_FR', null).then((_) => _fetchRevenue());
+  }
+
+  void updateDateRange(DateTime startDate, DateTime endDate) {
+    setState(() {
+      _startDate = startDate;
+      _endDate = endDate;
+    });
+    _fetchRevenue();
   }
 
   Future<void> _fetchRevenue() async {
@@ -149,34 +168,43 @@ class _RevenueChartState extends State<RevenueChart> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (isSmallScreen)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Statistiques des revenus',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+            if (widget.showDateSelector)
+              if (isSmallScreen)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Statistiques des revenus',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDateRangeControls(isSmallScreen),
-                ],
-              )
-            else
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Statistiques des revenus',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 16),
+                    _buildDateRangeControls(isSmallScreen),
+                  ],
+                )
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Statistiques des revenus',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  _buildDateRangeControls(isSmallScreen),
-                ],
+                    _buildDateRangeControls(isSmallScreen),
+                  ],
+                ),
+            if (!widget.showDateSelector)
+              const Text(
+                'Statistiques des revenus',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             const SizedBox(height: 24),
             if (_isLoading)
