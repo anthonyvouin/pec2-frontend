@@ -7,6 +7,7 @@ import 'package:camera/camera.dart';
 import 'package:firstflutterapp/screens/post-creation/post-details.dart';
 import 'package:firstflutterapp/screens/post-creation/post-creation-service.dart';
 import 'package:toastification/toastification.dart';
+import 'package:go_router/go_router.dart';
 
 class UploadPhotoView extends StatefulWidget {
   const UploadPhotoView({super.key});
@@ -20,6 +21,8 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
   CameraController? _cameraController;
   List<CameraDescription> _cameras = [];
   bool _isCameraInitialized = false;
+  bool _isWaitingForPermission = true; // Nouvel état pour attente de permission
+  bool _isCameraPermissionDenied = false; // Pour suivre si l'accès caméra a été refusé
   int _selectedCameraIndex = 0;
   bool _isCapturing = false;
   final ImagePicker picker = ImagePicker();
@@ -49,18 +52,51 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
   }
 
   Future<void> _initializeCamera() async {
+    // Mettre à jour l'état pour indiquer que nous attendons la permission
+    setState(() {
+      _isWaitingForPermission = true;
+    });
+    
     try {
       _cameras = await _postCreationService.getAvailableCameras();
       if (_cameras.isNotEmpty) {
         _selectedCameraIndex = 0;
         await _setupCamera(_selectedCameraIndex);
+      } else {
+        // Aucune caméra disponible
+        _showPermissionDeniedMessage();
       }
     } catch (e) {
+      // Erreur d'accès à la caméra - probablement une permission refusée
+      _showPermissionDeniedMessage();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de l\'initialisation de la caméra: $e')),
-      );
+      print('Erreur d\'accès à la caméra: $e');
+    } finally {
+      // Mettre à jour l'état si l'initialisation a échoué
+      if (mounted && _isWaitingForPermission) {
+        setState(() {
+          _isWaitingForPermission = false;
+        });
+      }
     }
+  }
+  
+  void _showPermissionDeniedMessage() {
+    if (!mounted) return;
+    
+    // Mettre à jour l'état pour indiquer que l'accès à la caméra a été refusé
+    setState(() {
+      _isWaitingForPermission = false;
+      _isCameraPermissionDenied = true;
+    });
+    
+    // Afficher un message informant l'utilisateur qu'il peut toujours utiliser la galerie
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Accès à l\'appareil photo refusé. Vous pouvez toujours importer une image depuis votre galerie.'),
+        duration: Duration(seconds: 5),
+      ),
+    );
   }
 
   Future<void> _setupCamera(int index) async {
@@ -96,12 +132,26 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
       if (!mounted) return;
       setState(() {
         _isCameraInitialized = true;
+        _isWaitingForPermission = false;
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de l\'initialisation de la caméra: $e')),
-      );
+      
+      // Vérifier si l'erreur est liée à un refus de permission
+      final errorMessage = e.toString().toLowerCase();
+      if (errorMessage.contains('permission') || 
+          errorMessage.contains('access') || 
+          errorMessage.contains('denied')) {
+        setState(() {
+          _isCameraPermissionDenied = true;
+        });
+        _showPermissionDeniedMessage();
+      } else {
+        // Une autre erreur est survenue
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de l\'initialisation de la caméra: $e')),
+        );
+      }
     }
   }
 
@@ -149,6 +199,12 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
             _image = File(image.path);
           }
         });
+        
+        // Si l'accès à la caméra est refusé ou si nous sommes en mode aperçu direct,
+        // passer directement à l'écran suivant avec l'image sélectionnée
+        if (_isCameraPermissionDenied || _xFile != null) {
+          _continueToNextStep();
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -205,9 +261,44 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
   }
 
   Widget _buildCameraView() {
-    if (!_isCameraInitialized || _cameraController == null) {
-      return const Center(
-        child: CircularProgressIndicator(),
+    // Si la caméra a été refusée, afficher la vue d'importation d'image
+    if (_isCameraPermissionDenied || (!_isWaitingForPermission && (_cameras.isEmpty || _cameraController == null))) {
+      return _buildCameraPermissionDeniedView();
+    }
+    
+    // Si nous attendons encore la permission ou si la caméra n'est pas initialisée
+    if (_isWaitingForPermission || !_isCameraInitialized || _cameraController == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 20),
+            Text(
+              _isWaitingForPermission 
+              ? 'En attente de l\'autorisation d\'accès à l\'appareil photo...'
+              : 'Initialisation de l\'appareil photo...',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 20),
+            // Option pour accéder directement à la galerie
+            OutlinedButton.icon(
+              onPressed: () {
+                _pickImage();
+              },
+              icon: const Icon(Icons.photo_library),
+              label: const Text('Choisir depuis la galerie'),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () {
+                context.go('/');
+              },
+              child: const Text('Retourner à l\'accueil'),
+            ),
+          ],
+        ),
       );
     }
 
@@ -464,6 +555,66 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
           ),
         ),
       ],
+    );
+  }
+
+  // Affiche une interface lorsque l'accès à la caméra est refusé
+  Widget _buildCameraPermissionDeniedView() {
+    return Container(
+      color: Colors.black,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.no_photography,
+              color: Colors.white,
+              size: 64,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Accès à l\'appareil photo refusé',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                'Vous pouvez toujours importer une image depuis votre galerie pour créer un post.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: _pickImage,
+              icon: const Icon(Icons.photo_library),
+              label: const Text('Choisir depuis la galerie'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () {
+                context.go('/');
+              },
+              icon: const Icon(Icons.arrow_back, color: Colors.white70),
+              label: const Text(
+                'Retourner à l\'accueil',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
