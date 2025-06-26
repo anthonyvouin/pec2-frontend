@@ -274,7 +274,7 @@ class _SearchViewState extends PostsFeedViewBase<SearchView> with SingleTickerPr
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
-          Icon(Icons.search, color: theme.colorScheme.primary),
+          Icon(Icons.person, color: theme.colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
