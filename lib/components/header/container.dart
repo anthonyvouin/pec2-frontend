@@ -30,12 +30,6 @@ class _HeaderState extends State<Header> {
         Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              onPressed: () {
-                // Action pour les notifications
-              },
-            ),
-            IconButton(
               icon: const Icon(Icons.send_outlined),
               onPressed: () {
                 context.go(messageRoute);
