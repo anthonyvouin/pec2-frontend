@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'users_chart.dart';
 import 'posts_chart.dart';
 import 'revenue_chart.dart';
+import 'likes_chart.dart';
 import 'package:intl/intl.dart';
 
 class StatisticsPage extends StatefulWidget {
@@ -17,11 +18,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
   final GlobalKey<UserStatsChartState> _userChartKey = GlobalKey();
   final GlobalKey<PostsChartState> _postsChartKey = GlobalKey();
   final GlobalKey<RevenueChartState> _revenueChartKey = GlobalKey();
+  final GlobalKey<LikesChartState> _likesChartKey = GlobalKey();
 
   void _updateDateRange() {
     _userChartKey.currentState?.updateDateRange(_startDate, _endDate);
     _postsChartKey.currentState?.updateDateRange(_startDate, _endDate);
     _revenueChartKey.currentState?.updateDateRange(_startDate, _endDate);
+    _likesChartKey.currentState?.updateDateRange(_startDate, _endDate);
   }
 
   @override
@@ -174,6 +177,23 @@ class _StatisticsPageState extends State<StatisticsPage> {
             const SizedBox(height: 16),
             PostsChart(
               key: _postsChartKey,
+              initialStartDate: _startDate,
+              initialEndDate: _endDate,
+              showDateSelector: false,
+            ),
+            const SizedBox(height: 32),
+            
+            // Section des statistiques de likes
+            const Text(
+              'Statistiques des likes',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            LikesChart(
+              key: _likesChartKey,
               initialStartDate: _startDate,
               initialEndDate: _endDate,
               showDateSelector: false,
