@@ -20,11 +20,11 @@ class PieChartGraph extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          height: 210,
+          height: 150,
           child: PieChart(
             PieChartData(
               sections: _buildSections(genderData, colors),
-              centerSpaceRadius: 40,
+              centerSpaceRadius: 15,
               sectionsSpace: 2,
             ),
           ),

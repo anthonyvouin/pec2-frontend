@@ -20,7 +20,7 @@ class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
   DateTimeRange? _selectedRange;
   bool _isLoading = false;
   final ApiService _apiService = ApiService();
-  UserStats? _userStats;
+  CreatorGeneralStats? _userStats;
 
   void _updateDateRange(String option) async {
     DateTime now = DateTime.now();
@@ -68,7 +68,7 @@ class _CreatorStatisticsViewState extends State<CreatorStatisticsView> {
     );
     if (request.success) {
       setState(() {
-        _userStats = UserStats.fromJson(request.data);
+        _userStats = CreatorGeneralStats.fromJson(request.data);
         print(_userStats);
       });
     } else {
