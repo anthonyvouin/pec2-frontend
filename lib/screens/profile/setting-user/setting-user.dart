@@ -45,6 +45,16 @@ class SettingUser extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
+              onPressed: () {
+                context.goNamed('subscriptions');
+              },
+              style: AppTheme.emptyButtonStyle.merge(
+                ElevatedButton.styleFrom(fixedSize: const Size(300, 50)),
+              ),
+              child: const Text("Mes abonnements"),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
               onPressed: () async {
                 final userNotifier = context.read<UserNotifier>();
                 userNotifier.logout();

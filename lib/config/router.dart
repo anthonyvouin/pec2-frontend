@@ -14,6 +14,7 @@ import 'package:firstflutterapp/screens/profile/other_profil_view.dart';
 import 'package:firstflutterapp/screens/profile/profil_view.dart';
 import 'package:firstflutterapp/screens/profile/setting-preferences/setting-preferences.dart';
 import 'package:firstflutterapp/screens/profile/setting-user/setting-user.dart';
+import 'package:firstflutterapp/screens/profile/subscriptions/user_subscriptions.dart';
 import 'package:firstflutterapp/screens/profile/update_profile/update_profile.dart';
 import 'package:firstflutterapp/screens/register/end-register.dart';
 import 'package:firstflutterapp/screens/register/register_view.dart';
@@ -54,6 +55,7 @@ const editProfileRoute = '/profile/edit';
 const profileParams = '/profile/params';
 const profileUpdatePassword = '/profile/params/update-password';
 const profileSupport = '/profile/params/support';
+const profileSubscriptions = '/profile/params/subscriptions';
 const adminRoute = '/admin';
 const adminDashboard = '/admin/dashboard';
 const adminUsersManagement = '/admin/users';
@@ -192,6 +194,11 @@ final router = GoRouter(
                   path: 'preferences',
                   name: 'preferences',
                   builder: (context, state) => SettingPreferences(),
+                ),
+                GoRoute(
+                  path: 'subscriptions',
+                  name: 'subscriptions',
+                  builder: (context, state) => const UserSubscriptionsPage(),
                 ),
               ],
             ),
