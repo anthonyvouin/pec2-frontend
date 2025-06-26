@@ -13,10 +13,10 @@ class UserSearchService {
     try {
       final response = await _apiService.request(
         method: 'GET',
-        endpoint: '/users/search',
+        endpoint: '/users',
         withAuth: true,
         queryParams: {
-          'query': query,
+          'search': query,
         },
       );
 
