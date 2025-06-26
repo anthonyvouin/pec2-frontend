@@ -18,16 +18,25 @@ class UserData {
 }
 
 class UserStatsChart extends StatefulWidget {
-  const UserStatsChart({Key? key}) : super(key: key);
+  final DateTime? initialStartDate;
+  final DateTime? initialEndDate;
+  final bool showDateSelector;
+
+  const UserStatsChart({
+    Key? key, 
+    this.initialStartDate,
+    this.initialEndDate,
+    this.showDateSelector = true,
+  }) : super(key: key);
 
   @override
-  _UserStatsChartState createState() => _UserStatsChartState();
+  UserStatsChartState createState() => UserStatsChartState();
 }
 
-class _UserStatsChartState extends State<UserStatsChart> {
+class UserStatsChartState extends State<UserStatsChart> {
   bool _isLoading = false;
-  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
-  DateTime _endDate = DateTime.now();
+  late DateTime _startDate;
+  late DateTime _endDate;
   int _totalUsers = 0;
   String _error = '';
   List<UserData> _userData = [];
@@ -35,7 +44,17 @@ class _UserStatsChartState extends State<UserStatsChart> {
   @override
   void initState() {
     super.initState();
+    _startDate = widget.initialStartDate ?? DateTime.now().subtract(const Duration(days: 30));
+    _endDate = widget.initialEndDate ?? DateTime.now();
     initializeDateFormatting('fr_FR', null).then((_) => _fetchStats());
+  }
+
+  void updateDateRange(DateTime startDate, DateTime endDate) {
+    setState(() {
+      _startDate = startDate;
+      _endDate = endDate;
+    });
+    _fetchStats();
   }
 
   Future<void> _fetchStats() async {
@@ -142,34 +161,43 @@ class _UserStatsChartState extends State<UserStatsChart> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (isSmallScreen)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Statistiques des inscriptions',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+            if (widget.showDateSelector)
+              if (isSmallScreen)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Statistiques des inscriptions',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDateRangeControls(isSmallScreen),
-                ],
-              )
-            else
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Statistiques des inscriptions',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 16),
+                    _buildDateRangeControls(isSmallScreen),
+                  ],
+                )
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Statistiques des inscriptions',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  _buildDateRangeControls(isSmallScreen),
-                ],
+                    _buildDateRangeControls(isSmallScreen),
+                  ],
+                ),
+            if (!widget.showDateSelector)
+              const Text(
+                'Statistiques des inscriptions',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             const SizedBox(height: 24),
             if (_isLoading)
