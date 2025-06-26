@@ -1,6 +1,8 @@
 import 'package:firstflutterapp/screens/creator/advencedView.dart';
 import 'package:firstflutterapp/screens/creator/general_statistic_view.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../notifiers/userNotififers.dart';
 
 
 class CreatorStatView extends StatefulWidget {
@@ -11,6 +13,7 @@ class CreatorStatView extends StatefulWidget {
 class _CreatorStatViewState extends State<CreatorStatView>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isCreator = false;
 
 
   @override
@@ -26,10 +29,13 @@ class _CreatorStatViewState extends State<CreatorStatView>
   }
   @override
   Widget build(BuildContext context) {
+    final userNotifier = Provider.of<UserNotifier>(context);
+    _isCreator = userNotifier.user?.role == "CONTENT_CREATOR" ;
     return Scaffold(
       appBar: AppBar(title: const Text('Statistiques')),
       body: Column(
         children: [
+          if(_isCreator)
           Container(
             color: Colors.white,
             child: TabBar(

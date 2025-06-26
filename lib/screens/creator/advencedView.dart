@@ -166,7 +166,13 @@ class _AdvencedviewState extends State<Advencedview> {
   }
 
   Widget _containerStats() {
-    return Column(children: [_graph(_userStats!.payments, 'Revenues')]);
+    return Column(
+      children: [
+        _graph(_userStats!.payments, 'Revenues'),
+        const SizedBox(height: 16),
+        _graph(_userStats!.subscriptions, 'Abonnements'),
+      ],
+    );
   }
 
   List<FlSpot> _convertToSpots(List<Revenues> data) {
@@ -237,7 +243,7 @@ class _AdvencedviewState extends State<Advencedview> {
                           interval: 10,
                           getTitlesWidget: (value, meta) {
                             return Text(
-                              '${value.toInt()}€',
+                              '${value.toInt()} ${title == 'Revenues' ? "€" : ""}',
                               style: TextStyle(fontSize: 10),
                             );
                           },

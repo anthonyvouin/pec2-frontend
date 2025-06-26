@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
+import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../components/graph/pie_chart_graph.dart';
 import '../../components/subscriber/subscriberList.dart';
 import '../../components/title/title_onlyflick.dart';
 import '../../interfaces/user_stats.dart';
+import '../../notifiers/userNotififers.dart';
 import '../../services/api_service.dart';
 import '../../services/toast_service.dart';
 
@@ -16,6 +19,7 @@ class GeneralStatisticView extends StatefulWidget {
 }
 
 class _GeneralStatisticViewState extends State<GeneralStatisticView> {
+  bool _isCreator = false;
   bool _isLoading = false;
   final ApiService _apiService = ApiService();
   CreatorGeneralStats? _userStatsGeneral;
@@ -83,12 +87,15 @@ class _GeneralStatisticViewState extends State<GeneralStatisticView> {
 
 
   Widget _content() {
+    final userNotifier = Provider.of<UserNotifier>(context);
+    _isCreator = userNotifier.user?.role == "CONTENT_CREATOR" ;
     if (_isLoading) {
       return Text('Chargement des données');
     }
 
     return Column(
       children: [
+        if(_isCreator)
         Row(
           children: [
             DropdownButton<String>(
@@ -122,7 +129,9 @@ class _GeneralStatisticViewState extends State<GeneralStatisticView> {
   }
 
   Widget _secondLine(){
-    print("Second line loaded");
+    if(_userStatsGeneral!.threeLastPost.isEmpty){
+      return Text("Vous n'avez rien posté");
+    }
     return Center(
       child: Wrap(
         alignment: WrapAlignment.center,
@@ -413,6 +422,9 @@ class _GeneralStatisticViewState extends State<GeneralStatisticView> {
   }
 
   Widget _firstLine() {
+    if(_userStatsGeneral!.subscriberLength == 0){
+      return Text("Vous n'avez pas de $_selectedFollowOrSubscriber");
+    }
     return Center(
       child: Wrap(
         alignment: WrapAlignment.center,

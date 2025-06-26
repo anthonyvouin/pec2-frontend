@@ -16,13 +16,20 @@ class Revenues {
 
 class CreatorAdvencedStats {
   final List<Revenues> payments;
-  CreatorAdvencedStats({required this.payments});
+  final List<Revenues> subscriptions;
+  CreatorAdvencedStats({required this.payments, required this.subscriptions});
 
   factory CreatorAdvencedStats.fromJson(Map<String, dynamic> json) {
     return CreatorAdvencedStats(
       payments:
       json['monthlyRevenue'] != null
           ? (json['monthlyRevenue'] as List)
+          .map((e) => Revenues.fromJson(e))
+          .toList()
+          : [],
+      subscriptions:
+      json['subscriptions'] != null
+          ? (json['subscriptions'] as List)
           .map((e) => Revenues.fromJson(e))
           .toList()
           : [],
