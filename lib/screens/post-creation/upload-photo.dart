@@ -234,76 +234,77 @@ class UploadPhotoViewState extends State<UploadPhotoView> {
           ),
         ),
         
-        // Contrôle du zoom
-        Positioned(
-          top: 60,
-          right: 20,
-          child: Column(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  children: [
-                    const Icon(Icons.zoom_in, color: Colors.white),
-                    Container(
-                      height: 150,
-                      width: 30,
-                      child: RotatedBox(
-                        quarterTurns: 3,
-                        child: Slider(
-                          value: _currentZoomLevel,
-                          min: _minAvailableZoom,
-                          max: _maxAvailableZoom,
-                          activeColor: Colors.white,
-                          inactiveColor: Colors.white30,
-                          onChanged: (value) {
-                            _setZoomLevel(value);
-                          },
+        // Contrôle du zoom - masqué sur le web
+        if (!kIsWeb)
+          Positioned(
+            top: 60,
+            right: 20,
+            child: Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.zoom_in, color: Colors.white),
+                      SizedBox(
+                        height: 150,
+                        width: 30,
+                        child: RotatedBox(
+                          quarterTurns: 3,
+                          child: Slider(
+                            value: _currentZoomLevel,
+                            min: _minAvailableZoom,
+                            max: _maxAvailableZoom,
+                            activeColor: Colors.white,
+                            inactiveColor: Colors.white30,
+                            onChanged: (value) {
+                              _setZoomLevel(value);
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                    const Icon(Icons.zoom_out, color: Colors.white),
-                  ],
+                      const Icon(Icons.zoom_out, color: Colors.white),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  children: [
-                    const Icon(Icons.brightness_6, color: Colors.white),
-                    Container(
-                      height: 150,
-                      width: 30,
-                      child: RotatedBox(
-                        quarterTurns: 3,
-                        child: Slider(
-                          value: _currentExposureOffset,
-                          min: _minAvailableExposureOffset,
-                          max: _maxAvailableExposureOffset,
-                          activeColor: Colors.white,
-                          inactiveColor: Colors.white30,
-                          onChanged: (value) {
-                            _setExposureOffset(value);
-                          },
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.brightness_6, color: Colors.white),
+                      SizedBox(
+                        height: 150,
+                        width: 30,
+                        child: RotatedBox(
+                          quarterTurns: 3,
+                          child: Slider(
+                            value: _currentExposureOffset,
+                            min: _minAvailableExposureOffset,
+                            max: _maxAvailableExposureOffset,
+                            activeColor: Colors.white,
+                            inactiveColor: Colors.white30,
+                            onChanged: (value) {
+                              _setExposureOffset(value);
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                    const Icon(Icons.brightness_4, color: Colors.white),
-                  ],
+                      const Icon(Icons.brightness_4, color: Colors.white),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
 
         // Contrôles en bas (bouton photo, etc.)
         Positioned(
