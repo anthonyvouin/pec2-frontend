@@ -149,15 +149,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
             ),
             const SizedBox(height: 24),
             
-            // Section des statistiques d'utilisateurs
-            const Text(
-              'Statistiques des inscriptions',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
             UserStatsChart(
               key: _userChartKey,
               initialStartDate: _startDate,
@@ -166,15 +157,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
             ),
             const SizedBox(height: 32),
             
-            // Section des statistiques de posts
-            const Text(
-              'Statistiques des publications',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
             PostsChart(
               key: _postsChartKey,
               initialStartDate: _startDate,
@@ -183,15 +165,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
             ),
             const SizedBox(height: 32),
             
-            // Section des statistiques de likes
-            const Text(
-              'Statistiques des likes',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
             LikesChart(
               key: _likesChartKey,
               initialStartDate: _startDate,
@@ -200,15 +173,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
             ),
             const SizedBox(height: 32),
             
-            // Section des statistiques de revenus
-            const Text(
-              'Statistiques des revenus',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
             RevenueChart(
               key: _revenueChartKey,
               initialStartDate: _startDate,
