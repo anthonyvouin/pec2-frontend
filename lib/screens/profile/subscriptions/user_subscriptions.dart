@@ -29,6 +29,9 @@ class _UserSubscriptionsPageState extends State<UserSubscriptionsPage> {
       );
       
       if (response.success) {
+        if (response.data == null) {
+          return [];
+        }
         return response.data as List<dynamic>;
       } else {
         throw Exception('Erreur: ${response.error}');
@@ -48,10 +51,14 @@ class _UserSubscriptionsPageState extends State<UserSubscriptionsPage> {
   }
 
   Widget _buildSubscriptionCard(Map<String, dynamic> subscription) {
-    final creator = subscription['creator'] as Map<String, dynamic>;
-    final status = subscription['status'] as String;
-    final startDate = formatDate(subscription['startDate'].toString());
-    final endDate = formatDate(subscription['endDate'].toString());
+    final creator = subscription['creator'] is Map<String, dynamic> 
+        ? subscription['creator'] as Map<String, dynamic> 
+        : <String, dynamic>{};
+        
+    final status = subscription['status']?.toString() ?? 'UNKNOWN';
+    
+    final startDate = formatDate(subscription['startDate']?.toString() ?? '');
+    final endDate = formatDate(subscription['endDate']?.toString() ?? '');
 
     Color statusColor;
     switch (status) {
@@ -98,8 +105,9 @@ class _UserSubscriptionsPageState extends State<UserSubscriptionsPage> {
           ],
         ),
         onTap: () {
-          // Naviguer vers le profil du créateur
-          context.go('/profile/${creator['userName']}');
+          if (creator['userName'] != null) {
+            context.go('/profile/${creator['userName']}');
+          }
         },
       ),
     );
@@ -117,13 +125,30 @@ class _UserSubscriptionsPageState extends State<UserSubscriptionsPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
+            String errorMessage = 'Une erreur est survenue';
+            
+            if (snapshot.error.toString().contains('TypeError: null')) {
+              errorMessage = 'Impossible de charger les abonnements';
+            } else {
+              errorMessage = 'Erreur: ${snapshot.error.toString().length > 100 
+                ? snapshot.error.toString().substring(0, 100) + '...' 
+                : snapshot.error}';
+            }
+            
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
-                  Text('Erreur: ${snapshot.error}'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Text(
+                      errorMessage,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
@@ -136,7 +161,7 @@ class _UserSubscriptionsPageState extends State<UserSubscriptionsPage> {
                 ],
               ),
             );
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
             return const Center(
               child: Text(
                 'Vous n\'avez aucun abonnement',
@@ -149,9 +174,29 @@ class _UserSubscriptionsPageState extends State<UserSubscriptionsPage> {
           return ListView.builder(
             itemCount: subscriptions.length,
             itemBuilder: (context, index) {
-              return _buildSubscriptionCard(
-                subscriptions[index] as Map<String, dynamic>,
-              );
+              try {
+                if (subscriptions[index] is Map<String, dynamic>) {
+                  return _buildSubscriptionCard(
+                    subscriptions[index] as Map<String, dynamic>,
+                  );
+                } else {
+                  return const Card(
+                    margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text('Données d\'abonnement invalides'),
+                    ),
+                  );
+                }
+              } catch (e) {
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text('Erreur d\'affichage: $e'),
+                  ),
+                );
+              }
             },
           );
         },
