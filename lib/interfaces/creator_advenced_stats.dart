@@ -1,5 +1,3 @@
-import 'package:firstflutterapp/screens/creator/advencedView.dart';
-
 class Revenues {
   final String month;
   final double total;

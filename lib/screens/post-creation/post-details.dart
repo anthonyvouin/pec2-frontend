@@ -264,7 +264,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
   @override
   Widget build(BuildContext context) {
     final userNotifier = Provider.of<UserNotifier>(context);
-    _isCreator = userNotifier.user?.role == 'CONTENT_CREATOR' ??false;
+    _isCreator = userNotifier.user?.role == 'CONTENT_CREATOR';
     return Scaffold(
       appBar: AppBar(
         title: Text(

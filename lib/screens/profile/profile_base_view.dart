@@ -495,12 +495,13 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                   onPressed: () async {
                     if (!_isSubscriber && _stripeLink != null) {
                       final url = Uri.parse(_stripeLink!);
-                      if (await canLaunchUrl(url)) {
+                      // if (await canLaunchUrl(url)) {
+                      // if(await launchUrl(url)){
                         await launchUrl(
                           url,
                           mode: LaunchMode.externalApplication,
                         );
-                      }
+                      // }
                     } else {
                       _deleteSubscription();
                     }
