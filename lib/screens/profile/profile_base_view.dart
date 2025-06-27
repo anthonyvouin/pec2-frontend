@@ -4,7 +4,6 @@ import 'package:firstflutterapp/interfaces/user.dart';
 import 'package:firstflutterapp/services/api_service.dart';
 import 'package:firstflutterapp/services/toast_service.dart';
 import 'package:firstflutterapp/theme.dart';
-import 'package:firstflutterapp/screens/creator/creator-view.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -40,6 +39,7 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
   int _followingsCount = 0;
   bool _isFollowed = false;
   bool isFree = true;
+  bool _isAlreadyCreator = false;
 
   final ApiService _apiService = ApiService();
 
@@ -69,10 +69,32 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
     }
   }
 
+  Future<void> _getInscription() async {
+    try {
+      final response = await _apiService.request(
+        method: 'GET',
+        endpoint: '/content-creators',
+        withAuth: true,
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          _isAlreadyCreator = response.data != null;
+        });
+      }
+    } catch (e) {
+      ToastService.showToast(
+        "Impossible de récupérer l'inscription",
+        ToastificationType.error,
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _currentUser = context.read<UserNotifier>().user;
+    _getInscription();
+
 
     if (widget.isCurrentUser || (widget.username == _currentUser?.userName)) {
       _initCurrentUserProfile();
@@ -216,7 +238,6 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
         );
       },
     );
-    // Rafraîchir la liste des followings, le profil et les compteurs après la fermeture de la modale
     await _fetchFollowingsAndSync();
     await _fetchFollowCounts();
     await _fetchOtherUserData();
@@ -443,12 +464,9 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => CreatorView()),
-              );
+              context.goNamed('profile-creator');
             },
-            child: const Text("Devenir créateur"),
+            child: Text(_isAlreadyCreator?"Modifier ma fiche créateur":"Devenir créateur"),
           ),
           const SizedBox(height: 16),
         ],
@@ -477,12 +495,10 @@ class _ProfileBaseViewState extends State<ProfileBaseView> {
                   onPressed: () async {
                     if (!_isSubscriber && _stripeLink != null) {
                       final url = Uri.parse(_stripeLink!);
-                      if (await canLaunchUrl(url)) {
                         await launchUrl(
                           url,
                           mode: LaunchMode.externalApplication,
                         );
-                      }
                     } else {
                       _deleteSubscription();
                     }

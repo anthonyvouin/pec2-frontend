@@ -5,11 +5,11 @@ class User {
   String role;
   String bio;
   String profilePicture;
-  String? stripeCustomerId;
   DateTime? emailVerifiedAt;
   String firstName;
   String lastName;
-  DateTime birthDayDate;  String sexe;
+  DateTime birthDayDate;
+  String sexe;
   bool commentEnabled;
   bool messageEnabled;
   bool subscriptionEnabled;
@@ -24,8 +24,8 @@ class User {
     required this.lastName,
     required this.birthDayDate,
     required this.sexe,
-    this.stripeCustomerId,
-    this.emailVerifiedAt,    this.id,
+    this.emailVerifiedAt,
+    this.id,
     this.commentEnabled = true,
     this.messageEnabled = true,
     this.subscriptionEnabled = true,
@@ -39,10 +39,11 @@ class User {
       role: json['role'],
       bio: json['bio'],
       profilePicture: json['profilePicture'] ?? "",
-      stripeCustomerId: json['stripeCustomerId'],
       firstName: json['firstName'],
       lastName: json['lastName'],
-      birthDayDate: DateTime.parse(json["birthDayDate"]),      sexe: json['sexe'],      commentEnabled: json['commentsEnable'] ?? true,
+      birthDayDate: DateTime.parse(json["birthDayDate"]),
+      sexe: json['sexe'],
+      commentEnabled: json['commentsEnable'] ?? true,
       messageEnabled: json['messageEnable'] ?? true,
       subscriptionEnabled: json['subscriptionEnable'] ?? true,
     );
@@ -56,7 +57,6 @@ class User {
       'role': role,
       'bio': bio,
       'profilePicture': profilePicture,
-      'stripeCustomerId': stripeCustomerId,
       'firstName': firstName,
       'lastName': lastName,
       'birthDayDate': birthDayDate.toIso8601String(),
@@ -88,10 +88,6 @@ class PostCreatorUser {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'userName': userName,
-      'profilePicture': profilePicture,
-    };
+    return {'id': id, 'userName': userName, 'profilePicture': profilePicture};
   }
 }

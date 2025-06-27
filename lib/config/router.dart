@@ -3,12 +3,10 @@ import 'package:firstflutterapp/notifiers/userNotififers.dart';
 import 'package:firstflutterapp/screens/confirm-email/confirm_email_view.dart';
 import 'package:firstflutterapp/screens/confirm-email/resend-email-confirmation.dart';
 import 'package:firstflutterapp/screens/creator/creator-view.dart';
-import 'package:firstflutterapp/screens/creator/creator_statistics_view.dart';
 import 'package:firstflutterapp/screens/home/home_view.dart';
 import 'package:firstflutterapp/screens/post-creation/post-details.dart';
 import 'package:firstflutterapp/screens/post-creation/upload-photo.dart';
 import 'package:firstflutterapp/screens/post_detail/post_fullscreen_view.dart';
-import 'package:firstflutterapp/screens/home/home-service.dart';
 import 'package:firstflutterapp/interfaces/post.dart';
 import 'package:firstflutterapp/screens/profile/other_profil_view.dart';
 import 'package:firstflutterapp/screens/profile/profil_view.dart';
@@ -40,6 +38,8 @@ import 'package:firstflutterapp/screens/reset-password/request-reset-password.da
 import 'package:firstflutterapp/screens/reset-password/confirm-reset-password.dart';
 
 import 'package:firstflutterapp/admin/statistics_page.dart';
+
+import '../screens/creator/creator_statistics.dart';
 
 const homeRoute = '/';
 const loginRoute = '/login';
@@ -173,7 +173,7 @@ final router = GoRouter(
             GoRoute(
               path: 'statistic-creator',
               name: 'statistic-creator',
-              builder: (context, state) => CreatorStatisticsView(),
+              builder: (context, state) => CreatorStatView(),
             ),
             GoRoute(
               path: 'params',

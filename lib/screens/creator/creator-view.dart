@@ -1,8 +1,5 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:firstflutterapp/components/form/loading_button.dart';
+import 'package:firstflutterapp/interfaces/creator.dart';
 import 'package:firstflutterapp/interfaces/siret_response.dart';
 import 'package:firstflutterapp/interfaces/siret_valid_result.dart';
 import 'package:firstflutterapp/screens/creator/creator-service.dart';
@@ -10,9 +7,7 @@ import 'package:firstflutterapp/services/file_picker_service.dart';
 import 'package:firstflutterapp/services/toast_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mime/mime.dart';
 import 'package:toastification/toastification.dart';
 import '../../components/form/custom_form_field.dart';
 import '../../interfaces/file_picker_web.dart';
@@ -32,13 +27,13 @@ class _CreatorViewState extends State<CreatorView> {
   final _formKey1 = GlobalKey<FormState>();
   final _formKey2 = GlobalKey<FormState>();
 
-  final TextEditingController _siretController = TextEditingController();
-  final TextEditingController _companyNameController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
-  final TextEditingController _zipCodeController = TextEditingController();
-  final TextEditingController _ibanController = TextEditingController();
-  final TextEditingController _bicController = TextEditingController();
+  TextEditingController _siretController = TextEditingController();
+  TextEditingController _companyNameController = TextEditingController();
+  TextEditingController _addressController = TextEditingController();
+  TextEditingController _cityController = TextEditingController();
+  TextEditingController _zipCodeController = TextEditingController();
+  TextEditingController _ibanController = TextEditingController();
+  TextEditingController _bicController = TextEditingController();
 
   SiretResponse? responseSiret;
 
@@ -46,6 +41,34 @@ class _CreatorViewState extends State<CreatorView> {
   String _selectedFile = "";
   String _selectedFileName = "";
   bool _isSubmitted = false;
+  bool _isAlreadyCreator = false;
+  Creator? _creator;
+
+  @override
+  void initState() {
+    super.initState();
+    _getInscription();
+  }
+
+  _populateForm() {
+    if (_creator != null) {
+      _siretController = TextEditingController(
+        text: _creator?.siretNumber ?? "",
+      );
+      _companyNameController = TextEditingController(
+        text: _creator?.companyName ?? "",
+      );
+      _addressController = TextEditingController(
+        text: _creator?.streetAddress ?? "",
+      );
+      _cityController = TextEditingController(text: _creator?.city ?? "");
+      _zipCodeController = TextEditingController(
+        text: _creator?.postalCode ?? "",
+      );
+      _ibanController = TextEditingController(text: _creator?.iban ?? "");
+      _bicController = TextEditingController(text: _creator?.bic ?? "");
+    }
+  }
 
   @override
   void dispose() {
@@ -59,6 +82,29 @@ class _CreatorViewState extends State<CreatorView> {
     super.dispose();
   }
 
+  Future<void> _getInscription() async {
+    try {
+      final response = await _apiService.request(
+        method: 'GET',
+        endpoint: '/content-creators',
+        withAuth: true,
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          _isAlreadyCreator = response.data != null;
+          if (response.data != null) {
+            _creator = Creator.fromJson(response.data);
+            _populateForm();
+          }
+        });
+      }
+    } catch (e) {
+      ToastService.showToast(
+        "Impossible de récupérer l'inscription",
+        ToastificationType.error,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,41 +140,44 @@ class _CreatorViewState extends State<CreatorView> {
           if (_step == 2) _buildStep2(),
           if (_step == 3) _buildStep3(),
           const SizedBox(height: 16),
-          if(_step == 1 || _step == 2)
-          SizedBox(
-            width: double.infinity,
-            child: LoadingButton(
-              label: _step == 1 ? "Suivant" : "Valider",
-              isSubmitted: _isSubmitted,
-              onPressed: () async {
-                if (_step == 1) {
-                  if (_formKey1.currentState!.validate()) {
-                    final SiretValidationResult isValidSiret =
-                        await _creatorService.siretIsValid(
-                          _siretController.text,
+          if (_step == 1 || _step == 2)
+            SizedBox(
+              width: double.infinity,
+              child: LoadingButton(
+                label: _step == 1 ? "Suivant" : "Valider",
+                isSubmitted: _isSubmitted,
+                onPressed: () async {
+                  if (_step == 1) {
+                    if (_formKey1.currentState!.validate()) {
+                      final SiretValidationResult isValidSiret =
+                          await _creatorService.siretIsValid(
+                            _siretController.text,
+                          );
+                      if (isValidSiret.isValid && isValidSiret.data != null) {
+                        final data = isValidSiret.data!;
+                        setState(() {
+                          if(!_isAlreadyCreator){
+                            _companyNameController.text = data.company_name ?? '';
+                            _addressController.text = data.address ?? '';
+                            _cityController.text = data.city ?? '';
+                            _zipCodeController.text = data.postal_code ?? '';
+                          }
+
+                          _step = 2;
+                        });
+                      } else {
+                        ToastService.showToast(
+                          'Siret invalide',
+                          ToastificationType.error,
                         );
-                    if (isValidSiret.isValid && isValidSiret.data != null) {
-                      final data = isValidSiret.data!;
-                      setState(() {
-                        _companyNameController.text = data.company_name ?? '';
-                        _addressController.text = data.address ?? '';
-                        _cityController.text = data.city ?? '';
-                        _zipCodeController.text = data.postal_code ?? '';
-                        _step = 2;
-                      });
-                    } else {
-                      ToastService.showToast(
-                        'Siret invalide',
-                        ToastificationType.error,
-                      );
+                      }
                     }
+                  } else {
+                    _submitForm();
                   }
-                } else {
-                  _submitForm();
-                }
-              },
+                },
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -228,6 +277,7 @@ class _CreatorViewState extends State<CreatorView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              SizedBox(height: 20),
               CustomTextField(
                 controller: _companyNameController,
                 label: 'Nom de la société',
@@ -271,16 +321,17 @@ class _CreatorViewState extends State<CreatorView> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_selectedFileName == "")
+            if (_selectedFileName == "" && !_isAlreadyCreator)
               Row(
                 children: [
                   FilledButton(
                     onPressed: () async {
                       if (PlatformUtils.isWebPlatform()) {
-                        FilePickerWeb? filePickerWeb = await FileService.getFilePicker();
+                        FilePickerWeb? filePickerWeb =
+                            await FileService.getFilePicker();
 
                         setState(() {
-                          if(filePickerWeb != null){
+                          if (filePickerWeb != null) {
                             _selectedFileName = filePickerWeb.name;
                             _selectedFile = filePickerWeb.file;
                           }
@@ -312,7 +363,7 @@ class _CreatorViewState extends State<CreatorView> {
                 ],
               ),
 
-            if (_selectedFileName != "")
+            if (_selectedFileName != "" && !_isAlreadyCreator)
               Row(
                 children: [
                   Text('Kbis : $_selectedFileName'),
@@ -333,54 +384,93 @@ class _CreatorViewState extends State<CreatorView> {
     );
   }
 
+  Future<void> _create() async {
+    if (_selectedFile != "") {
+      http.MultipartFile file;
+      if (PlatformUtils.isWebPlatform()) {
+        file = FileService.getMultipartFileWeb(_selectedFile);
+      } else {
+        file = await FileService.getMultipartFileMobile(_selectedFile);
+      }
+
+      final ApiResponse response = await _apiService.uploadMultipart(
+        endpoint: '/content-creators',
+        fields: {
+          "siretNumber": _siretController.text,
+          "companyName": _companyNameController.text,
+          "streetAddress": _addressController.text,
+          "postalCode": _zipCodeController.text,
+          "city": _cityController.text,
+          "country": "France",
+          "companyType": "Micro",
+          "iban": _ibanController.text,
+          "bic": _bicController.text,
+          "vatNumber": "FR12345678901",
+        },
+        file: file,
+        method: 'post',
+      );
+
+      if (response.success) {
+        setState(() {
+          _step = 3;
+        });
+      } else {
+        ToastService.showToast(
+          "Une erreur s'est produite",
+          ToastificationType.error,
+        );
+      }
+    } else {
+      ToastService.showToast(
+        "Vous devez selectionner un KBIS",
+        ToastificationType.error,
+      );
+    }
+  }
+
+  Future<void> _update() async {
+
+      final ApiResponse response = await _apiService.request(
+        endpoint: '/content-creators',
+        body: {
+          "siretNumber": _siretController.text,
+          "companyName": _companyNameController.text,
+          "streetAddress": _addressController.text,
+          "postalCode": _zipCodeController.text,
+          "city": _cityController.text,
+          "country": "France",
+          "companyType": "Micro",
+          "iban": _ibanController.text,
+          "bic": _bicController.text,
+          "vatNumber": "FR12345678901",
+        },
+        method: 'put',
+      );
+
+      if (response.success) {
+        setState(() {
+          _step = 3;
+        });
+      } else {
+        ToastService.showToast(
+          "Une erreur s'est produite",
+          ToastificationType.error,
+        );
+      }
+  }
+
   Future<void> _submitForm() async {
     setState(() {
       _isSubmitted = true;
     });
 
     if (_formKey2.currentState!.validate()) {
-      if (_selectedFile != "") {
-        http.MultipartFile file;
-        if (PlatformUtils.isWebPlatform()) {
-          file = FileService.getMultipartFileWeb(_selectedFile);
-        } else {
-          file = await FileService.getMultipartFileMobile(_selectedFile);
-        }
+      if(_isAlreadyCreator){
+        _update();
 
-        final ApiResponse response = await _apiService.uploadMultipart(
-          endpoint: '/content-creators',
-          fields: {
-            "siretNumber": _siretController.text,
-            "companyName": _companyNameController.text,
-            "streetAddress": _addressController.text,
-            "postalCode": _zipCodeController.text,
-            "city": _cityController.text,
-            "country": "France",
-            "companyType": "Micro",
-            "iban": _ibanController.text,
-            "bic": _bicController.text,
-            "vatNumber": "FR12345678901",
-          },
-          file: file,
-          method: 'post',
-        );
-
-        if (response.success) {
-          setState(() {
-            _step = 3;
-          });
-
-        } else {
-          ToastService.showToast(
-            "Une erreur s'est produite",
-            ToastificationType.error,
-          );
-        }
-      } else {
-        ToastService.showToast(
-          "Vous devez selectionner un KBIS",
-          ToastificationType.error,
-        );
+      }else{
+        _create();
       }
     }
 

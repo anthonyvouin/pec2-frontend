@@ -8,10 +8,12 @@ import 'package:firstflutterapp/interfaces/category.dart';
 import 'package:firstflutterapp/screens/post-creation/post-creation-service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../components/form/custom_form_field.dart';
 import '../../components/form/loading_button.dart';
+import '../../notifiers/userNotififers.dart';
 import '../../services/validators_service.dart'; // Ajout de l'import XFile
 
 class PostDetailsView extends StatefulWidget {
@@ -41,6 +43,7 @@ class PostDetailsView extends StatefulWidget {
 }
 
 class _PostDetailsViewState extends State<PostDetailsView> {
+  bool  _isCreator = false;
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _descriptionController;
   late final TextEditingController _nameController;
@@ -260,6 +263,8 @@ class _PostDetailsViewState extends State<PostDetailsView> {
 
   @override
   Widget build(BuildContext context) {
+    final userNotifier = Provider.of<UserNotifier>(context);
+    _isCreator = userNotifier.user?.role == 'CONTENT_CREATOR';
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -473,11 +478,13 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                                             ),
                                             Switch(
                                               value: _isFree,
-                                              onChanged: (value) {
+                                              onChanged: _isCreator
+                                                  ? (value) {
                                                 setState(() {
                                                   _isFree = value;
                                                 });
-                                              },
+                                              }
+                                                  : null, // désactivé si _isCreator est false
                                               activeColor:
                                                   Theme.of(
                                                     context,
