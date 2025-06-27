@@ -9,6 +9,7 @@ import 'package:firstflutterapp/components/subscription/subscription_required_wi
 
 import '../../interfaces/post.dart';
 import '../../notifiers/sse_provider.dart';
+import '../../notifiers/userNotififers.dart';
 import '../../screens/home/home-service.dart';
 
 class ProfileFeed extends StatefulWidget {
@@ -34,7 +35,7 @@ class _ProfileFeedState extends State<ProfileFeed> {
   List<Post> _posts = [];
   final PostsListingService _postListingService = PostsListingService();
   final ApiService _apiService = ApiService();
-
+  bool currentUserIsSameUserThanProfilUser = false;
   @override
   void didUpdateWidget(covariant ProfileFeed oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -43,7 +44,7 @@ class _ProfileFeedState extends State<ProfileFeed> {
         oldWidget.isFree != widget.isFree || oldWidget.userId != widget.userId;
 
     final shouldLoadPosts =
-        widget.isFree || (widget.isSubscriber ?? false) || widget.currentUser;
+        widget.isFree || (widget.isSubscriber ?? false) || widget.currentUser || currentUserIsSameUserThanProfilUser;
 
     if (isFeedChanged && shouldLoadPosts) {
       _loadPosts();
@@ -89,6 +90,9 @@ class _ProfileFeedState extends State<ProfileFeed> {
 
   @override
   Widget build(BuildContext context) {
+    final userNotifier = Provider.of<UserNotifier>(context);
+    currentUserIsSameUserThanProfilUser = userNotifier.user?.id == widget.userId ;
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -115,6 +119,7 @@ class _ProfileFeedState extends State<ProfileFeed> {
 
     if (widget.isFree ||
         widget.currentUser ||
+        currentUserIsSameUserThanProfilUser||
         (!widget.isFree && (widget.isSubscriber ?? false))) {
       return GridView.builder(
         shrinkWrap: true,
