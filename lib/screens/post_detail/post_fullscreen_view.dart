@@ -5,7 +5,6 @@ import 'package:firstflutterapp/notifiers/sse_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:firstflutterapp/components/comments/comments_modal.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firstflutterapp/services/user_preferences_helper.dart';
 import 'package:firstflutterapp/components/post-card/report_bottom_sheet.dart';
 
 class PostFullscreenView extends StatefulWidget {
@@ -26,16 +25,26 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
   late PageController _pageController;
   List<Post> _posts = [];
   int _currentIndex = 0;
+  
+  // Variables pour gérer les likes avec debounce
+  Map<String, int> _likesCountMap = {};
+  Map<String, bool> _isLikeInProgressMap = {};
+  Map<String, bool> _isLikedMap = {};
 
   // Variable pour stocker une référence au Provider
   late SSEProvider _sseProvider;
-  final UserPreferencesHelper _preferencesHelper = UserPreferencesHelper();
-  bool _areCommentsEnabled = true;
 
   @override
   void initState() {
     super.initState();
     _posts = widget.allPosts;
+
+    // Initialiser les maps pour les likes
+    for (Post post in _posts) {
+      _likesCountMap[post.id] = post.likesCount;
+      _isLikeInProgressMap[post.id] = false;
+      _isLikedMap[post.id] = post.isLikedByUser; // Utiliser la vraie valeur du backend
+    }
 
     // Trouver l'index du post initial
     _currentIndex = _posts.indexWhere(
@@ -47,8 +56,6 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
 
     // Initialiser le PageController à l'index du post initial
     _pageController = PageController(initialPage: _currentIndex);
-
-    _loadCommentsPreference();
   }
 
   @override
@@ -111,6 +118,15 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
   }
 
   Future<void> _toggleLike(Post post) async {
+    // Utiliser un debounce pour éviter les clics trop rapides
+    if (_isLikeInProgressMap[post.id] == true) {
+      return;
+    }
+    
+    setState(() {
+      _isLikeInProgressMap[post.id] = true;
+    });
+    
     try {
       final ApiService apiService = ApiService();
       final response = await apiService.request(
@@ -122,28 +138,44 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
       if (response.success) {
         setState(() {
           if (response.data['action'] == "added") {
+            _likesCountMap[post.id] = (_likesCountMap[post.id] ?? 0) + 1;
+            _isLikedMap[post.id] = true;
             post.likesCount++;
+            post.isLikedByUser = true; // Mettre à jour la propriété du post
           } else if (response.data['action'] == "removed") {
+            _likesCountMap[post.id] = (_likesCountMap[post.id] ?? 0) - 1;
+            _isLikedMap[post.id] = false;
             post.likesCount--;
+            post.isLikedByUser = false; // Mettre à jour la propriété du post
           }
         });
+      } else {
+        throw Exception('Échec de l\'ajout du like: ${response.error}');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    } finally {
+      // 0.5 seconde pour le debounce
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) {
+        setState(() {
+          _isLikeInProgressMap[post.id] = false;
+        });
       }
     }
   }
   void _openCommentsModal(Post post) {
     if (!mounted) return;
 
-    // Vérifier si les commentaires sont activés
-    if (!_areCommentsEnabled) {
+    // Vérifier si les commentaires sont activés pour ce post (par l'auteur du post)
+    if (!post.commentEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Les commentaires sont désactivés dans vos préférences'),
+          content: Text('Les commentaires sont désactivés pour ce post'),
           duration: Duration(seconds: 2),
         ),
       );
@@ -233,20 +265,6 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
     }
   }
 
-  Future<void> _loadCommentsPreference() async {
-    try {
-      final commentsEnabled = await _preferencesHelper.areCommentsEnabled();
-      if (mounted) {
-        setState(() {
-          _areCommentsEnabled = commentsEnabled;
-        });
-      }
-    } catch (e) {
-      // En cas d'erreur, on suppose que les commentaires sont activés
-      print('Erreur lors du chargement de la préférence commentaires: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -310,30 +328,33 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
       fit: StackFit.expand,
       children: [
         // Image du post - maintenant avec fit: BoxFit.cover pour prendre tout l'écran
-        InteractiveViewer(
-          minScale: 0.5,
-          maxScale: 4.0,
-          child: Image.network(
-            post.pictureUrl,
-            fit: BoxFit.cover,
-            // Modifié de contain à cover pour prendre tout l'écran
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  value:
-                      loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              (loadingProgress.expectedTotalBytes ?? 1)
-                          : null,
-                ),
-              );
-            },
-            errorBuilder:
-                (context, error, stackTrace) => const Center(
-                  child: Icon(Icons.error, color: Colors.white, size: 50),
-                ),
+        GestureDetector(
+          onDoubleTap: () => _toggleLike(post),
+          child: InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 4.0,
+            child: Image.network(
+              post.pictureUrl,
+              fit: BoxFit.cover,
+              // Modifié de contain à cover pour prendre tout l'écran
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    value:
+                        loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                (loadingProgress.expectedTotalBytes ?? 1)
+                            : null,
+                  ),
+                );
+              },
+              errorBuilder:
+                  (context, error, stackTrace) => const Center(
+                    child: Icon(Icons.error, color: Colors.white, size: 50),
+                  ),
+            ),
           ),
         ),
 
@@ -427,18 +448,24 @@ class _PostFullscreenViewState extends State<PostFullscreenView> {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(
-                        Icons.favorite_border,
-                        color: Colors.white,
+                      icon: Icon(
+                        (_isLikedMap[post.id] == true || _isLikeInProgressMap[post.id] == true)
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: _isLikeInProgressMap[post.id] == true 
+                            ? Colors.red.withOpacity(0.5)
+                            : (_isLikedMap[post.id] == true ? Colors.red : Colors.white),
                       ),
                       onPressed: () => _toggleLike(post),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                    ),                    const SizedBox(width: 4),                    Text(
-                      post.likesCount.toString(),
+                    ),                    
+                    const SizedBox(width: 4),                    
+                    Text(
+                      (_likesCountMap[post.id] ?? post.likesCount).toString(),
                       style: const TextStyle(color: Colors.white),
                     ),
-                    if (_areCommentsEnabled) ...[
+                    if (post.commentEnabled) ...[
                       const SizedBox(width: 16),
                       IconButton(
                         icon: const Icon(

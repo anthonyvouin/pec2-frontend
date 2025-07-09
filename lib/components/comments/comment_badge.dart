@@ -25,13 +25,13 @@ class CommentBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.chat, size: 16),
-            const SizedBox(width: 4),
+            const Icon(Icons.chat),
+            const SizedBox(width: 8),
             Text(
               count.toString(),
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
+                // fontWeight: FontWeight.bold,
+                color: Theme.of(context).iconTheme.color
               ),
             ),
           ],

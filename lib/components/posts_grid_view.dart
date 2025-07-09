@@ -147,21 +147,10 @@ class PostsGridView extends StatelessWidget {
                         const SizedBox(height: 16),
                         Text(
                           selectedCategoryId != null
-                              ? 'Chargement des posts pour cette catégorie...'
+                              ? 'Chargement des posts pour votre recherche...'
                               : 'Chargement des posts...',
                           style: TextStyle(color: Colors.grey[700]),
                         ),
-                        if (selectedCategoryId != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              'Catégorie ID: $selectedCategoryId',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   )

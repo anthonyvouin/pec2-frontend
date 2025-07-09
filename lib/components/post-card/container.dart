@@ -30,11 +30,13 @@ class PostCard extends StatefulWidget {
 class _PostCardState extends State<PostCard> {
   late int _likesCount;
   bool _isLikeInProgress = false;
+  bool _isLiked = false; // Track si l'utilisateur a liké le post
   
   @override
   void initState() {
     super.initState();
     _likesCount = widget.post.likesCount;
+    _isLiked = widget.post.isLikedByUser; // Initialiser avec la valeur du backend
   }
   
   String getFormattedDate(DateTime date) {
@@ -113,10 +115,14 @@ class _PostCardState extends State<PostCard> {
         setState(() {
           if (response.data['action'] == "added") {
             _likesCount++;
+            _isLiked = true;
             widget.post.likesCount++;
+            widget.post.isLikedByUser = true; // Mettre à jour la propriété du post
           } else if (response.data['action'] == "removed") {
             _likesCount--;
+            _isLiked = false;
             widget.post.likesCount--;
+            widget.post.isLikedByUser = false; // Mettre à jour la propriété du post
           }
         });
       } else {
@@ -151,7 +157,7 @@ class _PostCardState extends State<PostCard> {
               children: [                
                 CircleAvatar(
                   backgroundImage: widget.post.user.profilePicture.isEmpty
-                      ? const AssetImage('assets/images/default_avatar.png') as ImageProvider
+                      ? const AssetImage('assets/images/dog.webp') as ImageProvider
                       : NetworkImage(widget.post.user.profilePicture),
                   radius: 20,
                 ),
@@ -293,7 +299,10 @@ class _PostCardState extends State<PostCard> {
                 IconButton(
                   icon: _isLikeInProgress 
                       ? Icon(Icons.favorite, color: Colors.red.withOpacity(0.5))
-                      : Icon(Icons.favorite, color: Colors.red),
+                      : Icon(
+                          _isLiked ? Icons.favorite : Icons.favorite_border,
+                          color: _isLiked ? Colors.red : Theme.of(context).iconTheme.color,
+                        ),
                   onPressed: () {
                     toggleLike(widget.post.id).then((_) {
                       // We need to notify parent to update posts list
@@ -305,7 +314,7 @@ class _PostCardState extends State<PostCard> {
                 ),
                 Text(
                   _likesCount.toString(),
-                  style: TextStyle(color: Colors.grey[700]),
+                  style: TextStyle(color: Theme.of(context).iconTheme.color),
                 ),
                 
                 // Afficher le badge de commentaire uniquement si les commentaires sont activés pour le post
@@ -351,11 +360,13 @@ class PostCardContainer extends StatefulWidget {
 class _PostCardContainerState extends State<PostCardContainer> {
   late int _likesCount;
   bool _isLikeInProgress = false;
+  bool _isLiked = false; // Track si l'utilisateur a liké le post
   
   @override
   void initState() {
     super.initState();
     _likesCount = widget.post.likesCount;
+    _isLiked = widget.post.isLikedByUser; // Initialiser avec la valeur du backend
   }
   
   String getFormattedDate(DateTime date) {
@@ -436,9 +447,11 @@ class _PostCardContainerState extends State<PostCardContainer> {
         setState(() {
           if (response.data['action'] == "added") {
             _likesCount++;
+            _isLiked = true;
             widget.post.likesCount++;
           } else if (response.data['action'] == "removed") {
             _likesCount--;
+            _isLiked = false;
             widget.post.likesCount--;
           }
         });
@@ -476,7 +489,7 @@ class _PostCardContainerState extends State<PostCardContainer> {
               children: [                
                 CircleAvatar(
                   backgroundImage: widget.post.user.profilePicture.isEmpty
-                      ? const AssetImage('assets/images/default_avatar.png') as ImageProvider
+                      ? const AssetImage('assets/images/dog.webp') as ImageProvider
                       : NetworkImage(widget.post.user.profilePicture),
                   radius: 20,
                 ),
@@ -611,14 +624,16 @@ class _PostCardContainerState extends State<PostCardContainer> {
           Padding(
             padding: const EdgeInsets.only(left: 8, right: 8, top: 4, bottom: 4), // Ajout d'un padding vertical réduit
             child: Row(
-              children: [                IconButton(
+              children: [                
+                IconButton(
                   icon: _isLikeInProgress 
                       ? Icon(Icons.favorite, color: Colors.red.withOpacity(0.5))
-                      : Icon(Icons.favorite, color: Colors.red),
+                      : Icon(
+                          _isLiked ? Icons.favorite : Icons.favorite_border,
+                          color: _isLiked ? Colors.red : Colors.grey[600],
+                        ),
                   onPressed: () {
                     toggleLike(widget.post.id).then((_) {
-                      debugPrint('Post liked: ${widget.post.id}');
-                      debugPrint('Post likes count: ${_likesCount}');
                       
                       // We need to notify parent to update posts list
                       if (widget.onPostUpdated != null) {

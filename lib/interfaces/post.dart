@@ -19,6 +19,7 @@ class Post {
   final int reportsCount;
   List<Comment> comments;
   final bool commentEnabled;
+  bool isLikedByUser;
   
   Post({
     required this.id,
@@ -37,6 +38,7 @@ class Post {
     this.commentsCount = 0,
     this.reportsCount = 0,
     this.commentEnabled = true, // Valeur par défaut à true
+    this.isLikedByUser = false, // Valeur par défaut à false
   });
     factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
@@ -64,6 +66,7 @@ class Post {
       commentsCount: json['commentsCount'] ?? 0,
       reportsCount: json['reportsCount'] ?? 0,
       commentEnabled: json['commentEnabled'] ?? true, // Récupération depuis le JSON
+      isLikedByUser: json['isLikedByUser'] ?? false, // Récupération depuis le JSON
     );
   }
     Map<String, dynamic> toJson() {
@@ -84,6 +87,7 @@ class Post {
       'commentsCount': commentsCount,
       'reportsCount': reportsCount,
       'commentEnabled': commentEnabled,
+      'isLikedByUser': isLikedByUser,
     };
   }
 }

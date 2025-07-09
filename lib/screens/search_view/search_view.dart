@@ -196,7 +196,6 @@ class _SearchViewState extends PostsFeedViewBase<SearchView> with SingleTickerPr
       );
       
       if (!response.success) {
-        print('API request failed: ${response.error}');
         setState(() {
           posts = [];
           isLoading = false;
@@ -225,7 +224,6 @@ class _SearchViewState extends PostsFeedViewBase<SearchView> with SingleTickerPr
         data = response.data;
       } else {
         // Format inattendu, traiter comme une liste vide
-        print('Format de réponse inattendu: ${response.data.runtimeType}');
         data = [];
       }
       

@@ -216,7 +216,6 @@ class _CommentsModalState extends State<CommentsModal> {
                                   ? comment.userName[0].toUpperCase()
                                   : '?',
                               style: TextStyle(
-                                color: isAuthor ? Theme.of(context).primaryColor: Colors.black87,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -232,8 +231,8 @@ class _CommentsModalState extends State<CommentsModal> {
                                       comment.userName,
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: isAuthor ? Theme.of(context).primaryColor : Colors.black87,
+                                        color: isAuthor ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodyLarge?.color,
+                                        fontSize: 14                                      
                                       ),
                                     ),
                                     if (isAuthor)
@@ -248,8 +247,7 @@ class _CommentsModalState extends State<CommentsModal> {
                                           'Auteur',
                                           style: TextStyle(
                                             fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).primaryColor,
+                                            fontWeight: FontWeight.bold,                     
                                           ),
                                         ),
                                       ),

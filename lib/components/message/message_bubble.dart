@@ -8,9 +8,21 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isCurrentUser = message.isCurrentUser;
+    
+    final backgroundColor = isCurrentUser 
+        ? colorScheme.primary 
+        : colorScheme.surfaceContainerHighest;
+    final textColor = isCurrentUser 
+        ? colorScheme.onPrimary 
+        : colorScheme.onSurface;
+    final timeColor = isCurrentUser 
+        ? colorScheme.onPrimary.withValues(alpha: 0.7)
+        : colorScheme.onSurfaceVariant;
+    
     return Align(
-      alignment:
-          message.isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         padding: const EdgeInsets.all(12),
@@ -18,17 +30,20 @@ class MessageBubble extends StatelessWidget {
           maxWidth: MediaQuery.of(context).size.width * 0.7,
         ),
         decoration: BoxDecoration(
-          color: message.isCurrentUser ? Colors.blue[100] : Colors.grey[200],
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(message.content, style: const TextStyle(fontSize: 16)),
+            Text(
+              message.content, 
+              style: TextStyle(fontSize: 16, color: textColor)
+            ),
             const SizedBox(height: 4),
             Text(
               _formatDateTime(message.createdAt),
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 12, color: timeColor),
             ),
           ],
         ),

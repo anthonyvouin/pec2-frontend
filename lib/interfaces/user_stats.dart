@@ -42,11 +42,12 @@ class SubscriberAge {
   });
 
   factory SubscriberAge.fromJson(Map<String, dynamic> json) {
+    double round(val) => double.parse(val.toStringAsFixed(2));
     return SubscriberAge(
-      under18: json['under18'] as double,
-      between18And25: json['between18And25'] as double,
-      between26And40: json['between26And40'] as double,
-      over40: json['over40'] as double,
+      under18:  round(json['under18']),
+      between18And25: round(json['between18And25']),
+      between26And40: round(json['between26And40']),
+      over40:  round(json['over40']),
     );
   }
 }

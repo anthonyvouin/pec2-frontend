@@ -90,6 +90,7 @@ class AppTheme {
       foregroundColor: Colors.white,
     ),
     colorScheme: ColorScheme.dark(
+      surfaceContainerHighest: const Color(0xFF1F1F1F),
       primary: darkColor,
       secondary: const Color(0xFF9575CD),
     ),

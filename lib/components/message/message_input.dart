@@ -17,10 +17,10 @@ class MessageInput extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, -1),
