@@ -1,5 +1,8 @@
 # OnlyFlick - Frontend Flutter
 
+## Url du projet
+https://onlyflick.akiagaming.fr
+
 ## Explication du Projet
 OnlyFlick est une plateforme sociale innovante dédiée aux amoureux des animaux, permettant aux utilisateurs de créer, partager et interagir avec du contenu animalier. Le projet vise à offrir une expérience utilisateur complète avec des fonctionnalités de partage de photos et vidéos d'animaux, d'échange de conseils sur le soin animalier, de messagerie privée entre passionnés, et un système d'abonnement pour suivre les créateurs de contenu spécialisés. La plateforme propose également des fonctionnalités de modération pour assurer un contenu respectueux et des options de monétisation pour les créateurs partageant du contenu éducatif ou divertissant sur le monde animal.
 
